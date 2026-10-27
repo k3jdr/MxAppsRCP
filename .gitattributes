@@ -1,0 +1,11 @@
+# Text files are stored with LF and checked out with the platform's line ends;
+# Windows scripts always use CRLF.
+* text=auto
+*.java text diff=java
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.ico binary
+*.jpg binary
+*.zip binary
