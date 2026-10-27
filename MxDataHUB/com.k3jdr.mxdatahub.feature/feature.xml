@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.k3jdr.mxdatahub.feature"
+      label="MxDataHUB"
+      version="1.0.0.qualifier"
+      provider-name="k3jdr">
+
+   <description>
+      The security reference master (SRM) in PostgreSQL: securities and identifiers, portfolios and benchmarks, data refresh through the SRM loader service, load history, and the Layer 3 services and workflows.
+   </description>
+
+   <plugin id="com.k3jdr.mxdatahub" version="0.0.0"/>
+</feature>

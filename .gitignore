@@ -1,0 +1,23 @@
+## Build output
+target/
+bin/
+*.class
+
+## Eclipse workspace and IDE metadata
+.metadata/
+.recommenders/
+RemoteSystemsTempFiles/
+*.launch.bak
+
+## Running the apps from a build folder
+workspace/
+configuration/org.eclipse.*
+*.log
+
+## MxDataSQL workspaces (connection details) and exports
+*.mxworkspace
+*.csv
+
+## OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="ASCII"?>
+<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmi:id="_mxdatahub_app" elementId="com.k3jdr.mxdatahub.application">
+  <children xsi:type="basic:TrimmedWindow" xmi:id="_mxdatahub_window" elementId="com.k3jdr.mxdatahub.window" label="MxDataHUB" iconURI="platform:/plugin/com.k3jdr.mxdatahub/icons/app32.png" x="80" y="60" width="1360" height="860">
+    <children xsi:type="basic:Part" xmi:id="_mxdatahub_main" elementId="com.k3jdr.mxdatahub.part.main" contributionURI="bundleclass://com.k3jdr.mxdatahub/com.k3jdr.mxdatahub.MainPart" label="MxDataHUB"/>
+  </children>
+  <rootContext xmi:id="_mxdatahub_ctx" elementId="org.eclipse.ui.contexts.dialogAndWindow" name="In Dialog and Windows">
+    <children xmi:id="_mxdatahub_ctxw" elementId="org.eclipse.ui.contexts.window" name="In Windows"/>
+    <children xmi:id="_mxdatahub_ctxd" elementId="org.eclipse.ui.contexts.dialog" name="In Dialogs"/>
+  </rootContext>
+  <addons xmi:id="_mxdatahub_a1" elementId="org.eclipse.e4.core.commands.service" contributionURI="bundleclass://org.eclipse.e4.core.commands/org.eclipse.e4.core.commands.CommandServiceAddon"/>
+  <addons xmi:id="_mxdatahub_a2" elementId="org.eclipse.e4.ui.contexts.service" contributionURI="bundleclass://org.eclipse.e4.ui.services/org.eclipse.e4.ui.services.ContextServiceAddon"/>
+  <addons xmi:id="_mxdatahub_a3" elementId="org.eclipse.e4.ui.bindings.service" contributionURI="bundleclass://org.eclipse.e4.ui.bindings/org.eclipse.e4.ui.bindings.BindingServiceAddon"/>
+  <addons xmi:id="_mxdatahub_a4" elementId="org.eclipse.e4.ui.workbench.commands.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.CommandProcessingAddon"/>
+  <addons xmi:id="_mxdatahub_a5" elementId="org.eclipse.e4.ui.workbench.contexts.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.ContextProcessingAddon"/>
+  <addons xmi:id="_mxdatahub_a6" elementId="org.eclipse.e4.ui.workbench.bindings.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench.swt/org.eclipse.e4.ui.workbench.swt.util.BindingProcessingAddon"/>
+  <addons xmi:id="_mxdatahub_a7" elementId="org.eclipse.e4.ui.workbench.handler.model" contributionURI="bundleclass://org.eclipse.e4.ui.workbench/org.eclipse.e4.ui.internal.workbench.addons.HandlerProcessingAddon"/>
+</application:Application>

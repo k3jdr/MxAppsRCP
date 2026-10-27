@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <!-- The product: an e4 application whose window is modelled in Application.e4xmi. -->
+   <extension id="product" point="org.eclipse.core.runtime.products">
+      <product name="MxDataHUB" application="org.eclipse.e4.ui.workbench.swt.E4Application">
+         <property name="appName" value="MxDataHUB"/>
+         <property name="applicationXMI" value="com.k3jdr.mxdatahub/Application.e4xmi"/>
+         <property name="lifeCycleURI" value="bundleclass://com.k3jdr.mxdatahub/com.k3jdr.mxdatahub.LifeCycle"/>
+         <property name="clearPersistedState" value="true"/>
+         <property name="persistState" value="false"/>
+      </product>
+   </extension>
+</plugin>

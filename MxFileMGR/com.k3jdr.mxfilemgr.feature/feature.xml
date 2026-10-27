@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.k3jdr.mxfilemgr.feature"
+      label="MxFileMGR"
+      version="1.0.0.qualifier"
+      provider-name="k3jdr">
+
+   <description>
+      A dual-pane file manager in the spirit of Total Commander and ForkLift: tabs, function keys, copy, move, trash, find files, multi-rename, compare and synchronize folders, a viewer and cloud storage through the AWS, Azure and Google Cloud CLIs.
+   </description>
+
+   <plugin id="com.k3jdr.mxfilemgr" version="0.0.0"/>
+</feature>

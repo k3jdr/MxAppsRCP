@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?>
+<!-- The platform every MxAppsRCP app runs on: Eclipse 4.41 (2026-09) e4 RCP, plus PostgreSQL JDBC. -->
+<target name="MxAppsRCP - Eclipse 4.41 (2026-09)" sequenceNumber="1">
+  <locations>
+    <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="false" type="InstallableUnit">
+      <repository location="https://download.eclipse.org/eclipse/updates/4.41/R-4.41-202608281142/"/>
+      <unit id="org.eclipse.e4.rcp.feature.group" version="0.0.0"/>
+      <unit id="org.eclipse.equinox.executable.feature.group" version="0.0.0"/>
+      <unit id="org.eclipse.equinox.security" version="0.0.0"/>
+      <unit id="org.eclipse.equinox.security.win32" version="0.0.0"/>
+      <unit id="org.eclipse.equinox.preferences" version="0.0.0"/>
+      <unit id="org.osgi.service.prefs" version="0.0.0"/>
+      <unit id="org.eclipse.jface.text" version="0.0.0"/>
+      <unit id="org.eclipse.text" version="0.0.0"/>
+      <unit id="org.eclipse.ui.forms" version="0.0.0"/>
+      <unit id="com.google.gson" version="0.0.0"/>
+      <unit id="jakarta.inject.jakarta.inject-api" version="2.0.1"/>
+      <unit id="jakarta.annotation-api" version="3.0.0"/>
+      <unit id="com.sun.jna" version="0.0.0"/>
+      <unit id="com.sun.jna.platform" version="0.0.0"/>
+    </location>
+    <location includeDependencyDepth="none" includeDependencyScopes="compile" includeSource="false" missingManifest="error" type="Maven">
+      <dependencies>
+        <dependency>
+          <groupId>org.postgresql</groupId>
+          <artifactId>postgresql</artifactId>
+          <version>42.7.14</version>
+          <type>jar</type>
+        </dependency>
+      </dependencies>
+    </location>
+  </locations>
+  <targetJRE path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
+</target>

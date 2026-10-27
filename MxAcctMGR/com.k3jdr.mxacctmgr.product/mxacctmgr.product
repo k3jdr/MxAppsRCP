@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+
+<product name="MxAcctMGR" uid="com.k3jdr.mxacctmgr.product" id="com.k3jdr.mxacctmgr.product" application="org.eclipse.e4.ui.workbench.swt.E4Application" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
+
+   <aboutInfo>
+      <text>
+         MxAcctMGR — A personal-accounts IDE that teaches: banking registers and secure accounts, and an actively managed or passive index My Portfolio walked through holdings, benchmark, risk, optimization, trades and attribution.
+      </text>
+   </aboutInfo>
+
+   <configIni use="default">
+   </configIni>
+
+   <launcherArgs>
+      <programArgs>-data @user.home/AppData/Roaming/MxAppsRCP/MxAcctMGR/workspace</programArgs>
+      <vmArgs>-Xms128m -Xmx1g -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8</vmArgs>
+   </launcherArgs>
+
+   <windowImages i16="/com.k3jdr.mxacctmgr/icons/app16.png" i32="/com.k3jdr.mxacctmgr/icons/app32.png" i64="/com.k3jdr.mxacctmgr/icons/app64.png" i128="/com.k3jdr.mxacctmgr/icons/app128.png" i256="/com.k3jdr.mxacctmgr/icons/app256.png"/>
+
+   <launcher name="MxAcctMGR">
+      <win useIco="false">
+         <bmp/>
+      </win>
+   </launcher>
+
+   <vm>
+   </vm>
+
+   <features>
+      <feature id="org.eclipse.e4.rcp" installMode="root"/>
+      <feature id="com.k3jdr.mx.shared.feature" installMode="root"/>
+      <feature id="com.k3jdr.mxacctmgr.feature" installMode="root"/>
+   </features>
+
+   <configurations>
+      <plugin id="org.apache.felix.scr" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="0" />
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+   </configurations>
+
+</product>

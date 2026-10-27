@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.k3jdr.mxacctmgr.feature"
+      label="MxAcctMGR"
+      version="1.0.0.qualifier"
+      provider-name="k3jdr">
+
+   <description>
+      A personal-accounts IDE that teaches: banking registers and secure accounts, and an actively managed or passive index My Portfolio walked through holdings, benchmark, risk, optimization, trades and attribution.
+   </description>
+
+   <plugin id="com.k3jdr.mxacctmgr" version="0.0.0"/>
+</feature>

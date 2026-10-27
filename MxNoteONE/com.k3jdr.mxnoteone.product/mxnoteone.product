@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+
+<product name="MxNoteONE" uid="com.k3jdr.mxnoteone.product" id="com.k3jdr.mxnoteone.product" application="org.eclipse.e4.ui.workbench.swt.E4Application" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
+
+   <aboutInfo>
+      <text>
+         MxNoteONE — A digital notebook in the spirit of Microsoft OneNote: notebooks, section groups, sections and pages, free-form page canvases with rich text containers, tables, pictures, tags, search and a recycle bin.
+      </text>
+   </aboutInfo>
+
+   <configIni use="default">
+   </configIni>
+
+   <launcherArgs>
+      <programArgs>-data @user.home/AppData/Roaming/MxAppsRCP/MxNoteONE/workspace</programArgs>
+      <vmArgs>-Xms128m -Xmx1g -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8</vmArgs>
+   </launcherArgs>
+
+   <windowImages i16="/com.k3jdr.mxnoteone/icons/app16.png" i32="/com.k3jdr.mxnoteone/icons/app32.png" i64="/com.k3jdr.mxnoteone/icons/app64.png" i128="/com.k3jdr.mxnoteone/icons/app128.png" i256="/com.k3jdr.mxnoteone/icons/app256.png"/>
+
+   <launcher name="MxNoteONE">
+      <win useIco="false">
+         <bmp/>
+      </win>
+   </launcher>
+
+   <vm>
+   </vm>
+
+   <features>
+      <feature id="org.eclipse.e4.rcp" installMode="root"/>
+      <feature id="com.k3jdr.mx.shared.feature" installMode="root"/>
+      <feature id="com.k3jdr.mxnoteone.feature" installMode="root"/>
+   </features>
+
+   <configurations>
+      <plugin id="org.apache.felix.scr" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="0" />
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+   </configurations>
+
+</product>

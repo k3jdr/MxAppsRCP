@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.k3jdr.mx.shared.feature"
+      label="MxAppsRCP Shared"
+      version="1.0.0.qualifier"
+      provider-name="k3jdr">
+
+   <description>
+      What every MxAppsRCP app is built on: the shared core bundle (Quick Help, menus, split panes, table copy,
+      Back and Forward, links between the apps, the Layer 3 service catalog), PostgreSQL JDBC, Gson, Eclipse
+      secure storage (Windows DPAPI) in place of the macOS Keychain, the JFace text editor and JNA.
+   </description>
+
+   <plugin id="com.k3jdr.mx.core" version="0.0.0"/>
+   <plugin id="com.google.gson" version="0.0.0"/>
+   <plugin id="org.postgresql.jdbc" version="0.0.0"/>
+   <plugin id="org.eclipse.equinox.security" version="0.0.0"/>
+   <plugin id="org.eclipse.equinox.security.win32" os="win32" ws="win32" arch="x86_64" fragment="true" version="0.0.0"/>
+   <plugin id="org.eclipse.jface.text" version="0.0.0"/>
+   <plugin id="org.eclipse.text" version="0.0.0"/>
+   <plugin id="com.sun.jna" version="0.0.0"/>
+   <plugin id="com.sun.jna.platform" version="0.0.0"/>
+</feature>

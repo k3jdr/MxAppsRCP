@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+
+<product name="MxDataSQL" uid="com.k3jdr.mxdatasql.product" id="com.k3jdr.mxdatasql.product" application="org.eclipse.e4.ui.workbench.swt.E4Application" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
+
+   <aboutInfo>
+      <text>
+         MxDataSQL — Browse and edit PostgreSQL tables in workspaces: connection, table selection with psql-style descriptions, an editable grid with Run SQL, filters, paging, CSV export, JSON cells and DBML schema diagrams.
+      </text>
+   </aboutInfo>
+
+   <configIni use="default">
+   </configIni>
+
+   <launcherArgs>
+      <programArgs>-data @user.home/AppData/Roaming/MxAppsRCP/MxDataSQL/workspace</programArgs>
+      <vmArgs>-Xms128m -Xmx1g -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8</vmArgs>
+   </launcherArgs>
+
+   <windowImages i16="/com.k3jdr.mxdatasql/icons/app16.png" i32="/com.k3jdr.mxdatasql/icons/app32.png" i64="/com.k3jdr.mxdatasql/icons/app64.png" i128="/com.k3jdr.mxdatasql/icons/app128.png" i256="/com.k3jdr.mxdatasql/icons/app256.png"/>
+
+   <launcher name="MxDataSQL">
+      <win useIco="false">
+         <bmp/>
+      </win>
+   </launcher>
+
+   <vm>
+   </vm>
+
+   <features>
+      <feature id="org.eclipse.e4.rcp" installMode="root"/>
+      <feature id="com.k3jdr.mx.shared.feature" installMode="root"/>
+      <feature id="com.k3jdr.mxdatasql.feature" installMode="root"/>
+   </features>
+
+   <configurations>
+      <plugin id="org.apache.felix.scr" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="0" />
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+   </configurations>
+
+</product>

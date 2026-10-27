@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+
+<product name="MxJobsMGR" uid="com.k3jdr.mxjobsmgr.product" id="com.k3jdr.mxjobsmgr.product" application="org.eclipse.e4.ui.workbench.swt.E4Application" version="1.0.0.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
+
+   <aboutInfo>
+      <text>
+         MxJobsMGR — Design the day-to-day financial market data operation as a three-layer swim-lane diagram saved as JSON jobspace files, with API subscriptions, checks, and a run engine with approvals, breakpoints and mock or live Layer 3 calls.
+      </text>
+   </aboutInfo>
+
+   <configIni use="default">
+   </configIni>
+
+   <launcherArgs>
+      <programArgs>-data @user.home/AppData/Roaming/MxAppsRCP/MxJobsMGR/workspace</programArgs>
+      <vmArgs>-Xms128m -Xmx1g -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8</vmArgs>
+   </launcherArgs>
+
+   <windowImages i16="/com.k3jdr.mxjobsmgr/icons/app16.png" i32="/com.k3jdr.mxjobsmgr/icons/app32.png" i64="/com.k3jdr.mxjobsmgr/icons/app64.png" i128="/com.k3jdr.mxjobsmgr/icons/app128.png" i256="/com.k3jdr.mxjobsmgr/icons/app256.png"/>
+
+   <launcher name="MxJobsMGR">
+      <win useIco="false">
+         <bmp/>
+      </win>
+   </launcher>
+
+   <vm>
+   </vm>
+
+   <features>
+      <feature id="org.eclipse.e4.rcp" installMode="root"/>
+      <feature id="com.k3jdr.mx.shared.feature" installMode="root"/>
+      <feature id="com.k3jdr.mxjobsmgr.feature" installMode="root"/>
+   </features>
+
+   <configurations>
+      <plugin id="org.apache.felix.scr" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="0" />
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+   </configurations>
+
+</product>

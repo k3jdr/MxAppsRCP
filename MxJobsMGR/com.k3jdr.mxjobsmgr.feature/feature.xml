@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.k3jdr.mxjobsmgr.feature"
+      label="MxJobsMGR"
+      version="1.0.0.qualifier"
+      provider-name="k3jdr">
+
+   <description>
+      Design the day-to-day financial market data operation as a three-layer swim-lane diagram saved as JSON jobspace files, with API subscriptions, checks, and a run engine with approvals, breakpoints and mock or live Layer 3 calls.
+   </description>
+
+   <plugin id="com.k3jdr.mxjobsmgr" version="0.0.0"/>
+</feature>

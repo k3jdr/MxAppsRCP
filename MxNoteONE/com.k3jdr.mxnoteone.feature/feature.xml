@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.k3jdr.mxnoteone.feature"
+      label="MxNoteONE"
+      version="1.0.0.qualifier"
+      provider-name="k3jdr">
+
+   <description>
+      A digital notebook in the spirit of Microsoft OneNote: notebooks, section groups, sections and pages, free-form page canvases with rich text containers, tables, pictures, tags, search and a recycle bin.
+   </description>
+
+   <plugin id="com.k3jdr.mxnoteone" version="0.0.0"/>
+</feature>
