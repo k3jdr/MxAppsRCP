@@ -12,6 +12,7 @@
   <packaging>pom</packaging>
   <name>MxDataSQL</name>
   <modules>
+    <module>com.k3jdr.mx.dbml</module>
     <module>com.k3jdr.mxdatasql</module>
     <module>com.k3jdr.mxdatasql.feature</module>
     <module>com.k3jdr.mxdatasql.product</module>

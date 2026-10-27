@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: MxAppsRCP DBML diagrams
+Bundle-SymbolicName: com.k3jdr.mx.dbml
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: k3jdr
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: com.k3jdr.mx.dbml
+Bundle-ActivationPolicy: lazy
+Require-Bundle: com.k3jdr.mx.core,
+ org.eclipse.swt,
+ org.eclipse.jface,
+ com.google.gson
+Export-Package: com.k3jdr.mx.dbml

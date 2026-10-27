@@ -9,5 +9,6 @@
       Browse and edit PostgreSQL tables in workspaces: connection, table selection with psql-style descriptions, an editable grid with Run SQL, filters, paging, CSV export, JSON cells and DBML schema diagrams.
    </description>
 
+   <plugin id="com.k3jdr.mx.dbml" version="0.0.0"/>
    <plugin id="com.k3jdr.mxdatasql" version="0.0.0"/>
 </feature>
