@@ -36,11 +36,8 @@ public abstract class ElementView extends Composite {
         super(page.paper, SWT.NONE);
         this.page = page;
         this.element = element;
-        setBackground(page.paperColor());
         grip = new Canvas(this, SWT.NONE);
-        grip.setBackground(page.paperColor());
         handle = new Canvas(this, SWT.NONE);
-        handle.setBackground(page.paperColor());
         handle.setCursor(getDisplay().getSystemCursor(SWT.CURSOR_SIZEWE));
         grip.addPaintListener(e -> paintGrip(e.gc));
         handle.addPaintListener(e -> {

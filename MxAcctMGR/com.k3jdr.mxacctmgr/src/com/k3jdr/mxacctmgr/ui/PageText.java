@@ -114,6 +114,7 @@ public final class PageText {
 
     /** The words of a control that has its own (a label, a text, a button), or null for a container. */
     private static String leaf(Control c) {
+        if (c.getData("mx.pagetext.text") instanceof String s) return s.strip();
         if (c instanceof Label l) return (l.getStyle() & SWT.SEPARATOR) != 0 ? "" : l.getText().replace("&&", "&");
         if (c instanceof Text t) return t.getText();
         if (c instanceof Button b) {

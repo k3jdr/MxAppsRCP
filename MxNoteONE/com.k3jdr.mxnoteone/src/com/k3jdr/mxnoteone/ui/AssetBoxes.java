@@ -55,7 +55,6 @@ final class AssetBoxes {
         PictureBox(PageView page, PageElement element) {
             super(page, element);
             canvas = new Canvas(this, SWT.DOUBLE_BUFFERED);
-            canvas.setBackground(page.paperColor());
             canvas.addPaintListener(e -> paint(e.gc));
             canvas.addListener(SWT.MouseDown, e -> {
                 if (e.button == 1) page.select(this);
@@ -127,7 +126,6 @@ final class AssetBoxes {
         FileBox(PageView page, PageElement element) {
             super(page, element);
             canvas = new Canvas(this, SWT.DOUBLE_BUFFERED);
-            canvas.setBackground(page.paperColor());
             canvas.addPaintListener(e -> {
                 Rectangle r = canvas.getClientArea();
                 GC gc = e.gc;
@@ -196,7 +194,6 @@ final class AssetBoxes {
             super(page, element);
             aspect = element.width > 0 && element.height > GRIP ? (element.height - GRIP) / element.width : 0.5;
             canvas = new Canvas(this, SWT.DOUBLE_BUFFERED);
-            canvas.setBackground(page.paperColor());
             canvas.addPaintListener(e -> {
                 Rectangle r = canvas.getClientArea();
                 if (image != null) {

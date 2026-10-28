@@ -86,7 +86,7 @@ Get-CimInstance Win32_Process -Filter "Name='$App.exe'" | Where-Object { $_.Comm
 $log = Join-Path $workspace '.metadata\.log'
 $logBefore = if (Test-Path $log) { (Get-Item $log).Length } else { 0 }
 
-$argList = @('-data', $workspace, '-eclipse.keyring', $keyring, '-consoleLog') + $Arguments
+$argList = @('-data', $workspace, '-eclipse.keyring', $keyring) + $Arguments   # the log goes to the workspace's .metadata\.log (no -consoleLog: on Windows it opens a console window)
 $procId = [MxSmoke]::StartNoActivate($exe, (($argList | ForEach-Object { Quote $_ }) -join ' '))
 
 $deadline = (Get-Date).AddSeconds($Seconds)

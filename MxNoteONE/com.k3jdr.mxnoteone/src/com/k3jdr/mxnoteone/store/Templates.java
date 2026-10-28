@@ -152,6 +152,4 @@ public enum Templates {
             }
         }
     }
-
-    static DayOfWeek unused() { return DayOfWeek.MONDAY; }
 }

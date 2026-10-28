@@ -115,26 +115,7 @@ public class NoteText extends StyledText {
         addListener(SWT.Selection, e -> host.selectionChanged(this));
         addListener(SWT.FocusIn, e -> host.focused(this));
         addVerifyKeyListener(e -> {
-            if (host.keyFirst(this, e.keyCode, e.stateMask, e.character)) {
-                e.doit = false;
-                return;
-            }
-            boolean handled = switch (e.keyCode) {
-                case SWT.CR, SWT.KEYPAD_CR -> (e.stateMask & SWT.SHIFT) != 0 ? insertTyped(String.valueOf('\r')) : handleNewline();
-                case SWT.TAB -> (e.stateMask & SWT.CTRL) != 0 ? insertTyped("\t") : handleTab((e.stateMask & SWT.SHIFT) != 0);
-                case SWT.BS -> e.stateMask == 0 && handleBackspace();
-                case SWT.ESC -> {
-                    host.escape(this);
-                    yield true;
-                }
-                case SWT.ARROW_UP, SWT.ARROW_DOWN -> {
-                    if ((e.stateMask & (SWT.ALT | SWT.SHIFT)) == (SWT.ALT | SWT.SHIFT)) yield moveParagraphs(e.keyCode == SWT.ARROW_UP);
-                    if (e.stateMask != 0) yield false;
-                    yield caretOnEdgeLine(e.keyCode == SWT.ARROW_UP) && host.arrowOut(this, e.keyCode == SWT.ARROW_UP);
-                }
-                default -> false;
-            };
-            if (handled) e.doit = false;
+            if (key(e.keyCode, e.stateMask, e.character)) e.doit = false;
         });
         addListener(SWT.MouseDown, e -> {
             if (e.button == 1 && (e.stateMask & SWT.MODIFIER_MASK) == 0) toggleCheckbox(e.x, e.y);
@@ -160,6 +141,26 @@ public class NoteText extends StyledText {
             }
         });
         addListener(SWT.Dispose, e -> pictures.values().forEach(Image::dispose));
+    }
+
+    /** A key, before the widget's own handling: true when it was used here (Return, Tab, Backspace, Escape, arrows). */
+    boolean key(int keyCode, int stateMask, char character) {
+        if (host.keyFirst(this, keyCode, stateMask, character)) return true;
+        return switch (keyCode) {
+            case SWT.CR, SWT.KEYPAD_CR -> (stateMask & SWT.SHIFT) != 0 ? insertTyped(String.valueOf('\r')) : handleNewline();
+            case SWT.TAB -> (stateMask & SWT.CTRL) != 0 ? insertTyped("\t") : handleTab((stateMask & SWT.SHIFT) != 0);
+            case SWT.BS -> stateMask == 0 && handleBackspace();
+            case SWT.ESC -> {
+                host.escape(this);
+                yield true;
+            }
+            case SWT.ARROW_UP, SWT.ARROW_DOWN -> {
+                if ((stateMask & (SWT.ALT | SWT.SHIFT)) == (SWT.ALT | SWT.SHIFT)) yield moveParagraphs(keyCode == SWT.ARROW_UP);
+                if (stateMask != 0) yield false;
+                yield caretOnEdgeLine(keyCode == SWT.ARROW_UP) && host.arrowOut(this, keyCode == SWT.ARROW_UP);
+            }
+            default -> false;
+        };
     }
 
     @Override
@@ -195,7 +196,7 @@ public class NoteText extends StyledText {
 
     // MARK: Content
 
-    public void setContent(RText rt) {
+    public void setRichText(RText rt) {
         internal = true;
         try {
             setText(rt.text.replace(RText.LINE_BREAK, '\r'));
@@ -214,7 +215,7 @@ public class NoteText extends StyledText {
         syncParagraphs();
     }
 
-    public RText getContent() {
+    public RText getRichText() {
         String text = getText();
         List<RText.Span> spans = new ArrayList<>();
         int at = 0;
@@ -248,11 +249,11 @@ public class NoteText extends StyledText {
 
     public Snapshot snapshot() {
         Point sel = getSelection();
-        return new Snapshot(getContent(), sel.x, sel.y);
+        return new Snapshot(getRichText(), sel.x, sel.y);
     }
 
     public void restore(Snapshot s) {
-        setContent(s.content);
+        setRichText(s.content);
         edited = true;
         int len = getCharCount();
         setSelection(Math.min(s.start, len), Math.min(s.end, len));
@@ -729,7 +730,7 @@ public class NoteText extends StyledText {
             if (blockEnd >= t.length()) return true;
             neighbor = paragraphAt(blockEnd + 1);
         }
-        RText all = getContent();
+        RText all = getRichText();
         RText block = all.slice(blockStart, blockEnd), other = all.slice(neighbor[0], neighbor[1]);
         RText nl = all.slice(up ? neighbor[1] : blockEnd, (up ? neighbor[1] : blockEnd) + 1);
         int start = up ? neighbor[0] : blockStart, end = up ? blockEnd : neighbor[1];
@@ -737,7 +738,7 @@ public class NoteText extends StyledText {
         RText joined = first.concat(nl).concat(second);
         host.willChange(this, up ? "Move Paragraph Up" : "Move Paragraph Down", false);
         RText before = all.slice(0, start), after = all.slice(end, all.length());
-        setContent(before.concat(joined).concat(after));
+        setRichText(before.concat(joined).concat(after));
         edited = true;
         int movedStart = up ? start : start + other.length() + 1;
         setSelection(movedStart, movedStart + block.length());
@@ -870,23 +871,19 @@ public class NoteText extends StyledText {
             paste();
             return;
         }
-        if (action == ST.NEW_LINE) {
-            handleNewline();
-            return;
-        }
         super.invokeAction(action);
     }
 
     /** Re-applies formatting after a zoom change. */
     public void setZoom(double z) {
         if (z == zoom) return;
-        RText content = getContent();
+        RText content = getRichText();
         Point sel = getSelection();
         boolean wasEdited = edited;
         zoom = z;
         setTabStops(new int[] { px(28) });
         setMargins(px(4), px(4), px(4), px(4));
-        setContent(content);
+        setRichText(content);
         edited = wasEdited;
         setSelection(sel.x, sel.y);
     }

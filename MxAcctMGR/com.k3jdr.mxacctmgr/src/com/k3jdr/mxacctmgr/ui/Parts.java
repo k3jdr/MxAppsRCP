@@ -124,6 +124,7 @@ public final class Parts {
         card.setLayout(Ui.grid(2, 10, 6));
         card.setLayoutData(Ui.fillH());
         card.setBackground(LESSON_BG);
+        card.setBackgroundMode(SWT.INHERIT_FORCE);
         Label head = Ui.label(card, "💡  " + title, Settings.heading());
         head.setLayoutData(Ui.fillH());
         Button toggle = new Button(card, SWT.PUSH | SWT.FLAT);
@@ -187,6 +188,7 @@ public final class Parts {
         t.setLayout(Ui.grid(1, 10, 2));
         t.setLayoutData(Ui.fillH());
         t.setBackground(TILE_BG);
+        t.setBackgroundMode(SWT.INHERIT_FORCE);
         Label tl = Ui.label(t, title);
         tl.setForeground(Ui.SECONDARY);
         tl.setFont(Ui.small());
@@ -213,6 +215,7 @@ public final class Parts {
         b.setLayout(Ui.grid(1, 10, 8));
         b.setLayoutData(Ui.fillH());
         b.setBackground(BOX_BG);
+        b.setBackgroundMode(SWT.INHERIT_DEFAULT);
         Label t = Ui.label(b, title, Settings.heading());
         t.setBackground(BOX_BG);
         Composite content = new Composite(b, SWT.NONE);
@@ -230,6 +233,7 @@ public final class Parts {
         c.setLayout(Ui.grid(2, 8, 8));
         c.setLayoutData(Ui.fillH());
         c.setBackground(WARN_BG);
+        c.setBackgroundMode(SWT.INHERIT_FORCE);
         Label icon = Ui.label(c, "⚠");
         icon.setForeground(Ui.ORANGE);
         icon.setFont(Ui.bold());
@@ -249,6 +253,7 @@ public final class Parts {
         c.setLayout(Ui.grid(1, 12, 8));
         c.setLayoutData(Ui.fillH());
         c.setBackground(WARN_BG);
+        c.setBackgroundMode(SWT.INHERIT_DEFAULT);
         Label head = Ui.label(c, "⚠  The accounts service is not running", Settings.heading());
         head.setForeground(Ui.ORANGE);
         Text msg = text(c, message);

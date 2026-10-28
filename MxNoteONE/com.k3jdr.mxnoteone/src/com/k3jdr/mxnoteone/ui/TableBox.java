@@ -70,7 +70,7 @@ public final class TableBox extends ElementView implements NoteText.Host {
         data.normalize();
         values = new TableValues(data);
         grid = new Canvas(this, SWT.DOUBLE_BUFFERED);
-        grid.setBackground(page.paperColor());
+
         grid.addPaintListener(e -> paint(e.gc));
         grid.addListener(SWT.MouseDown, this::mouseDown);
         grid.addListener(SWT.MouseMove, this::mouseMove);
@@ -116,7 +116,7 @@ public final class TableBox extends ElementView implements NoteText.Host {
 
     @Override
     PageElement snapshot() {
-        if (editor() != null && editor.edited) storeCell(er, ec, editor.getContent());
+        if (editor() != null && editor.edited) storeCell(er, ec, editor.getRichText());
         element.table = data;
         return element;
     }
@@ -343,8 +343,7 @@ public final class TableBox extends ElementView implements NoteText.Host {
     private void paint(GC gc) {
         gc.setAntialias(SWT.ON);
         Rectangle client = grid.getClientArea();
-        gc.setBackground(page.paperColor());
-        gc.fillRectangle(client);
+
         boolean borders = !Boolean.TRUE.equals(data.hideBorders);
         for (int r = 0; r < data.rowCount(); r++) {
             if (rowH[r] == 0) continue;
@@ -447,7 +446,7 @@ public final class TableBox extends ElementView implements NoteText.Host {
         editor.setBackground(shade != null ? Gfx.color(Gfx.rgb(shade)) : page.paperColor());
         editor.setAutoColor(autoColor(r, c));
         editor.setBase(baseStyle(r, c));
-        editor.setContent(cellContent(r, c));
+        editor.setRichText(cellContent(r, c));
         editor.setHost(this);
         Menu menu = new Menu(editor);
         menu.addListener(SWT.Show, e -> fillCellMenu(menu));
@@ -487,8 +486,22 @@ public final class TableBox extends ElementView implements NoteText.Host {
         }
     }
 
+    /** Puts the editor away without storing it (its cell is going away); disposed after the key that did it. */
+    private void dropEditor() {
+        NoteText ed = editor;
+        editor = null;
+        er = ec = -1;
+        editBefore = null;
+        if (ed != null) {
+            ed.setVisible(false);
+            getDisplay().asyncExec(() -> {
+                if (!ed.isDisposed()) ed.dispose();
+            });
+        }
+    }
+
     private void placeEditor() {
-        if (editor() == null) return;
+        if (editor() == null || er < 0 || ec < 0 || er >= data.rowCount() || ec >= data.columnCount()) return;
         Rectangle rect = cellRect(er, ec);
         editor.setBounds(rect.x + 1, rect.y + 1, Math.max(1, rect.width - 1), Math.max(1, rect.height - 1));
     }
@@ -503,11 +516,15 @@ public final class TableBox extends ElementView implements NoteText.Host {
         int r = er, c = ec;
         editor = null;
         er = ec = -1;
-        if (ed.edited) storeCell(r, c, ed.getContent());
+        if (ed.edited) storeCell(r, c, ed.getRichText());
         boolean changed = editBefore != null && !editBefore.toJson().equals(data.toJson());
         if (changed) page.tableWillChange(this, "Typing", editBefore, editWidthBefore);
         editBefore = null;
-        ed.dispose();
+        // The editor may be in the middle of handling the key that moved on: it goes once that's done.
+        ed.setVisible(false);
+        getDisplay().asyncExec(() -> {
+            if (!ed.isDisposed()) ed.dispose();
+        });
         relayout();
         if (changed) page.contentChanged();
     }
@@ -590,7 +607,7 @@ public final class TableBox extends ElementView implements NoteText.Host {
                 if (data.rowCount() == 1 && nc < 0 && filled) {
                     // While the table has one row, Tab in a filled last cell adds a column.
                     change("Insert Column", () -> {
-                        storeCell(r, c, editor.getContent());
+                        storeCell(r, c, editor.getRichText());
                         editor.edited = false;
                         double w = colW[c] > 0 ? colW[c] : 120;
                         data.insertColumn(c + 1);
@@ -637,29 +654,19 @@ public final class TableBox extends ElementView implements NoteText.Host {
             case SWT.BS -> {
                 if (!editor.getText().isEmpty() || editor.getSelectionCount() > 0) return false;
                 if (c == addedColumn && columnEmpty(c) && data.columnCount() > 1) {
+                    dropEditor();
                     change("Delete Column", () -> {
                         element.width -= colW[c];
-                        editor.edited = false;
                         data.removeColumn(c);
                     });
                     addedColumn = -1;
-                    er = ec = -1;
-                    editor.dispose();
-                    editor = null;
-                    relayout();
                     beginEditing(r, Math.max(0, c - 1));
                     return true;
                 }
                 if (r == addedRow && rowEmpty(r) && data.rowCount() > 1) {
-                    change("Delete Row", () -> {
-                        editor.edited = false;
-                        data.removeRow(r);
-                    });
+                    dropEditor();
+                    change("Delete Row", () -> data.removeRow(r));
                     addedRow = -1;
-                    er = ec = -1;
-                    editor.dispose();
-                    editor = null;
-                    relayout();
                     beginEditing(Math.max(0, r - 1), c);
                     return true;
                 }
@@ -727,7 +734,7 @@ public final class TableBox extends ElementView implements NoteText.Host {
     private void addRowBelow(int r) {
         change("Insert Row", () -> {
             if (editor() != null && editor.edited) {
-                storeCell(er, ec, editor.getContent());
+                storeCell(er, ec, editor.getRichText());
                 editor.edited = false;
             }
             data.insertRow(r + 1);
@@ -996,7 +1003,7 @@ public final class TableBox extends ElementView implements NoteText.Host {
         TableData before = data.copy();
         double widthBefore = element.width;
         if (editor() != null && editor.edited) {
-            storeCell(er, ec, editor.getContent());
+            storeCell(er, ec, editor.getRichText());
             editor.edited = false;
             if (editBefore != null) {
                 before = editBefore;

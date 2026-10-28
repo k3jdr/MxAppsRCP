@@ -49,6 +49,11 @@ public final class PortfolioDialogs {
         new NewDialog(app).open();
     }
 
+    /** My Holdings ▸ Add Securities… (Ctrl+Shift+N). */
+    public static void addSecurities(App app) {
+        new AddSecuritiesDialog(app).open();
+    }
+
     /** The personal accounts in the security master — value, version, when and by whom last saved. */
     private static final class OpenDialog extends Dialog {
         private final App app;

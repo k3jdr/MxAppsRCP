@@ -21,9 +21,9 @@ final class TextBox extends ElementView implements NoteText.Host {
     TextBox(PageView page, PageElement element) {
         super(page, element);
         text = new NoteText(this, SWT.NONE, page.zoom);
-        text.setBackground(page.paperColor());
+
         text.setHost(this);
-        if (element.rtfd != null) text.setContent(RichCodec.decode(element.rtfd));
+        if (element.rtfd != null) text.setRichText(RichCodec.decode(element.rtfd));
         Menu menu = new Menu(text);
         menu.addListener(SWT.Show, e -> {
             for (MenuItem mi : menu.getItems()) mi.dispose();
@@ -99,7 +99,7 @@ final class TextBox extends ElementView implements NoteText.Host {
     @Override
     PageElement snapshot() {
         if (text.edited) {
-            RText content = text.getContent();
+            RText content = text.getRichText();
             element.rtfd = RichCodec.encode(content);
         }
         return element;
@@ -107,7 +107,7 @@ final class TextBox extends ElementView implements NoteText.Host {
 
     @Override
     String indexText() {
-        RText content = text.getContent();
+        RText content = text.getRichText();
         StringBuilder sb = new StringBuilder(content.text);
         String last = null;
         for (RText.Span s : content.spans) {

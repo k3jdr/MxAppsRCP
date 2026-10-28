@@ -442,6 +442,70 @@ public final class PortfolioStore {
         update(m);
     }
 
+    /** One lot as Edit Holding has it: purchase date, shares and total cost. */
+    public record LotRow(String acquired, double shares, double cost, String note) {}
+
+    /** Replaces a holding's lots (shares and total cost each); no lots left removes the holding (HoldingEditor.swift). */
+    public void updateHolding(String ticker, List<LotRow> lots) {
+        Portfolio open = openPortfolio();
+        if (open == null) return;
+        Portfolio mine = open.copy();
+        int i = -1;
+        for (int k = 0; k < mine.holdings.size(); k++) if (mine.holdings.get(k).ticker.equals(ticker)) i = k;
+        if (i < 0) return;
+        List<LotRow> kept = lots.stream().filter(l -> l.shares() > 0).toList();
+        double quantity = kept.stream().mapToDouble(LotRow::shares).sum();
+        if (quantity <= 0) {
+            mine.holdings.remove(i);
+            update(mine);
+            return;
+        }
+        Holding h = mine.holdings.get(i);
+        Security s = h.security();
+        Double price = s != null && s.price > 0 && !h.unpriced ? s.price : null;
+        List<com.k3jdr.mxacctmgr.port.TaxLot> newLots = new ArrayList<>();
+        for (LotRow l : kept) newLots.add(new com.k3jdr.mxacctmgr.port.TaxLot(l.acquired(), l.shares() / quantity, Math.max(0, l.cost()), l.note()));
+        h.lots = newLots;
+        h.quantity = quantity;
+        h.value = price != null ? price * quantity : kept.stream().mapToDouble(l -> Math.max(0, l.cost())).sum();
+        update(mine);
+    }
+
+    /** Sets the cash held (0 removes it). */
+    public void updateCash(double amount) {
+        Portfolio open = openPortfolio();
+        if (open == null) return;
+        Portfolio mine = open.copy();
+        mine.holdings.removeIf(h -> h.ticker.equals("CASH"));
+        if (amount > 0) mine.holdings.add(new Holding("CASH", amount));
+        update(mine);
+    }
+
+    /** Adds a security-master security to My Portfolio: shares, and a tax lot (cost and purchase date). */
+    public void addHolding(com.k3jdr.mxacctmgr.port.SRMSecurity s, double quantity, Double cost, String acquired) {
+        Portfolio open = openPortfolio();
+        if (open == null || quantity <= 0) return;
+        Portfolio mine = open.copy();
+        String key = SRMRegistry.shared().register(s);
+        double costBasis = cost != null ? cost : (s.price() != null ? s.price() * quantity : 0);
+        String lotDate = acquired != null ? acquired : java.time.LocalDate.now().toString();
+        double value = s.price() != null ? s.price() * quantity : costBasis;
+        Holding existing = mine.holdings.stream().filter(h -> h.ticker.equals(key)).findFirst().orElse(null);
+        if (existing != null) {
+            double oldQ = existing.quantity == null ? 0 : existing.quantity, newQ = oldQ + quantity;
+            if (existing.lots.isEmpty()) existing.lots.add(new com.k3jdr.mxacctmgr.port.TaxLot(lotDate, 1, existing.value));
+            for (com.k3jdr.mxacctmgr.port.TaxLot l : existing.lots) l.share *= oldQ / newQ;
+            existing.lots.add(new com.k3jdr.mxacctmgr.port.TaxLot(lotDate, quantity / newQ, costBasis));
+            existing.quantity = newQ;
+            existing.value += value;
+        } else {
+            List<com.k3jdr.mxacctmgr.port.TaxLot> lots = new ArrayList<>();
+            lots.add(new com.k3jdr.mxacctmgr.port.TaxLot(lotDate, 1, costBasis));
+            mine.holdings.add(new Holding(key, value, lots, s.price() == null, quantity));
+        }
+        update(mine);
+    }
+
     // Risk inputs and runs
 
     /** The analytics service's inputs for the selected account (off the UI thread). */

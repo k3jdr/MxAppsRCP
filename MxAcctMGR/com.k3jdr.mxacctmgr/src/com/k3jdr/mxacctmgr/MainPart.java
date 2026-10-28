@@ -96,6 +96,7 @@ public class MainPart {
         new Label(parent, SWT.SEPARATOR | SWT.HORIZONTAL).setLayoutData(Ui.fillH());
         statusBar(parent);
 
+        shell.addListener(SWT.Deactivate, e -> shell.getDisplay().asyncExec(this::releaseFocusIfInactive));
         app.onScreen(this::show);
         app.onChange(this::refreshFrame);
         app.history.addListener(this::refreshNavigation);
@@ -127,6 +128,18 @@ public class MainPart {
         app.port.loadAccounts();
         List<String> links = AppLinks.linkArguments(args, AppLink.ACCT_SCHEME, AppLink.LEGACY_ACCT_SCHEME);
         if (!links.isEmpty()) shell.getDisplay().asyncExec(() -> handleArguments(links));
+    }
+
+    /**
+     * The part is activated (also when the window opens): e4's own fallback would focus the part's first control,
+     * which activates a window opened in the background. Only an active window takes the focus, in the sidebar.
+     */
+    @org.eclipse.e4.ui.di.Focus
+    public void focus() {
+        if (shell != null && !shell.isDisposed() && shell.getDisplay().getActiveShell() == shell && sidebar != null) {
+            Control f = shell.getDisplay().getFocusControl();
+            if (f == null || f.getShell() != shell) sidebar.tree().setFocus();
+        }
     }
 
     // Toolbar
@@ -162,8 +175,14 @@ public class MainPart {
         GridData ag = new GridData(SWT.FILL, SWT.CENTER, false, false);
         ag.widthHint = 250;
         accountCombo.setLayoutData(ag);
+        accountCombo.addListener(SWT.FocusOut, e -> shell.getDisplay().asyncExec(this::refreshFrame));
         accountCombo.addListener(SWT.Selection, e -> {
             if (quiet) return;
+            if (app.screen().group == Screen.Group.MINE) {
+                // The Investments steps always use My Portfolio.
+                refreshFrame();
+                return;
+            }
             int i = accountCombo.getSelectionIndex();
             if (i >= 0 && i < accountIds.size()) app.port.select(accountIds.get(i));
         });
@@ -304,12 +323,12 @@ public class MainPart {
         bg.widthHint = 60;
         bg.heightHint = 10;
         busyBar.setLayoutData(bg);
-        Label edu = new Label(bar, SWT.NONE);
+        Label edu = new Label(bar, SWT.WRAP);
         edu.setText("🎓 " + Ui.escape(Help.EDUCATIONAL_BANNER));
         edu.setForeground(Ui.SECONDARY);
         edu.setFont(Ui.small());
         GridData eg = new GridData(SWT.END, SWT.CENTER, false, false);
-        eg.widthHint = 560;
+        eg.widthHint = 520;
         edu.setLayoutData(eg);
         edu.setToolTipText(Help.EDUCATIONAL_BANNER_HELP);
         QuickHelp.help(edu, Help.DISCLAIMER_TITLE, Help.DISCLAIMER);
@@ -320,7 +339,23 @@ public class MainPart {
 
     // Showing a screen
 
+    /**
+     * While the window isn't the active one, a control in it that holds the (thread's) focus and is then hidden or
+     * disabled makes SWT move the focus to another control — which activates the window, taking the keyboard from the
+     * app the user is in. So when the window is inactive the focus is let go first: disabling the shell for a moment
+     * saves the focus control (restored when the window is activated) and clears the focus without activating it.
+     */
+    private void releaseFocusIfInactive() {
+        Display d = shell.getDisplay();
+        if (shell.isDisposed() || d.getActiveShell() == shell) return;
+        Control focus = d.getFocusControl();
+        if (focus == null || focus.isDisposed() || focus.getShell() != shell) return;
+        shell.setEnabled(false);
+        shell.setEnabled(true);
+    }
+
     private void show(Screen s) {
+        releaseFocusIfInactive();
         if (page != null) {
             page.dispose();
             page = null;
@@ -344,6 +379,7 @@ public class MainPart {
 
     private void refreshFrame() {
         if (shell.isDisposed()) return;
+        releaseFocusIfInactive();
         Screen s = app.screen();
         String title = app.title(s, true);
         Portfolio p = app.port.portfolio();
@@ -366,7 +402,9 @@ public class MainPart {
             }
             accountCombo.select(accountIds.indexOf(app.port.selectedID()));
             boolean mine = s.group == Screen.Group.MINE;
-            accountCombo.setEnabled(!mine);
+            // Disabling the focused combo would move the focus (SWT's fixFocus), which activates the window: an
+            // Investments screen opened in the background must not take the keyboard. It is disabled once it lets go.
+            if (!mine || !accountCombo.isFocusControl()) accountCombo.setEnabled(!mine);
             accountCombo.setToolTipText(mine ? Help.ACCOUNT_PICKER_HELP_INVESTMENTS : Help.ACCOUNT_PICKER_HELP);
             engineCombo.select(app.engine().ordinal());
         } finally {
@@ -374,7 +412,7 @@ public class MainPart {
         }
         // Banner: the accounts couldn't be read.
         String problem = app.port.dataProblem;
-        boolean showBanner = problem != null && s.group != Screen.Group.BANKING && s != Screen.SERVICES;
+        boolean showBanner = problem != null && s.group != Screen.Group.BANKING && s != Screen.SERVICES && s != Screen.SECURITIES;
         if (showBanner && !problem.equals(bannerText.getText())) bannerText.setText(problem);
         if (banner.getVisible() != showBanner) {
             Ui.setVisible(banner, showBanner);
@@ -564,6 +602,10 @@ public class MainPart {
             app.go(Screen.MY_ATTRIBUTION);
             app.port.attribute();
         });
+        m.item("Add &Securities…", SWT.MOD1 | SWT.MOD2 | 'N', () -> {
+            app.go(Screen.MY_PORTFOLIO);
+            com.k3jdr.mxacctmgr.invest.PortfolioDialogs.addSecurities(app);
+        }, () -> app.port.openPortfolio() != null);
         m.separator();
         m.dynamic("&Engine", sub -> {
             for (App.Engine e : App.Engine.values()) sub.check(e.title, 0, () -> app.engine() == e, v -> app.setEngine(e));
@@ -608,8 +650,7 @@ public class MainPart {
 
     private void openReport(String id) {
         Settings.PREFS.put("report", id);
-        if (app.screen() == Screen.REPORT_WALKTHROUGH) show(Screen.REPORT_WALKTHROUGH);
-        else app.go(Screen.REPORT_WALKTHROUGH);
+        app.go(Screen.REPORT_WALKTHROUGH);
     }
 
     private void copyPageText() {

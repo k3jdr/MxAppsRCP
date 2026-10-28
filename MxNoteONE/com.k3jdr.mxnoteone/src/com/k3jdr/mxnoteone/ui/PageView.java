@@ -105,8 +105,12 @@ public final class PageView {
         scroll = new ScrolledComposite(root, SWT.H_SCROLL | SWT.V_SCROLL);
         scroll.setExpandHorizontal(false);
         scroll.setExpandVertical(false);
-        paper = new Composite(scroll, SWT.DOUBLE_BUFFERED);
+        paper = new Composite(scroll, SWT.NONE);
         paper.setLayout(null);
+        paper.setBackgroundMode(SWT.INHERIT_FORCE);
+        paper.addListener(SWT.Dispose, e -> {
+            if (paperImage != null) paperImage.dispose();
+        });
         scroll.setContent(paper);
         scroll.getVerticalBar().setIncrement(24);
         scroll.getHorizontalBar().setIncrement(24);
@@ -211,6 +215,9 @@ public final class PageView {
                 content = page;
                 build();
                 scroll.setOrigin(0, 0);
+                List<Runnable> waiting = new ArrayList<>(whenLoaded);
+                whenLoaded.clear();
+                waiting.forEach(Runnable::run);
                 if (store.focusTitleOnLoad) {
                     store.focusTitleOnLoad = false;
                     title.setFocus();
@@ -249,12 +256,10 @@ public final class PageView {
             Color bg = paperColor();
             paper.setBackground(bg);
             title.setVisible(true);
-            title.setBackground(bg);
             title.setText(content.title);
             title.setFont(Gfx.font("Segoe UI Light", 26, false, false, zoom));
             title.setBounds(px(MARGIN - 2), px(20), px(TITLE_WIDTH), px(48));
             date.setVisible(true);
-            date.setBackground(bg);
             date.setForeground(Gfx.color(115, 115, 115));
             date.setFont(Gfx.font("Segoe UI", 12, false, false, zoom));
             showDates();
@@ -344,7 +349,7 @@ public final class PageView {
     List<PageElement> snapshotElements() {
         List<PageElement> out = new ArrayList<>();
         for (ElementView v : orderedViews()) {
-            if (v instanceof TextBox t && t.isBlank() && !t.text.getContent().hasAttachments()) continue;
+            if (v instanceof TextBox t && t.isBlank() && !t.text.getRichText().hasAttachments()) continue;
             out.add(v.snapshot().copy());
         }
         return out;
@@ -365,7 +370,7 @@ public final class PageView {
     private void extractInlinePictures() {
         for (ElementView v : new ArrayList<>(views)) {
             if (!(v instanceof TextBox t) || !t.text.edited) continue;
-            RText rt = t.text.getContent();
+            RText rt = t.text.getRichText();
             if (!rt.hasAttachments()) continue;
             double y = t.element.y + t.element.height + 14;
             StringBuilder text = new StringBuilder();
@@ -398,7 +403,7 @@ public final class PageView {
                 if (piece.length() > 0) spans.add(new RText.Span(a, a + piece.length(), s.style().withAttachment(null)));
             }
             Point sel = t.text.getSelection();
-            t.text.setContent(new RText(text.toString(), spans, rt.paras));
+            t.text.setRichText(new RText(text.toString(), spans, rt.paras));
             t.text.edited = true;
             t.text.setSelection(Math.min(sel.x, t.text.getCharCount()));
             t.fit();
@@ -558,7 +563,11 @@ public final class PageView {
             onTableActive.run();
         }
         views.remove(v);
-        v.dispose();
+        // It may be handling the key or click that removed it: it goes once that's done.
+        v.setVisible(false);
+        root.getDisplay().asyncExec(() -> {
+            if (!v.isDisposed()) v.dispose();
+        });
         if (undoable) pushUndo("Delete", before);
         contentChanged();
     }
@@ -656,29 +665,55 @@ public final class PageView {
         int h = Math.max(Math.max(px(maxY + 480), client.height), px(1000));
         Point size = paper.getSize();
         if (size.x != w || size.y != h) paper.setSize(w, h);
+        updatePaper();
     }
 
     private void paint(GC gc, int x, int y, int w, int h) {
-        gc.setBackground(paperColor());
-        gc.fillRectangle(x, y, w, h);
         if (content == null) return;
-        RuleLines rules = content.rules;
-        if (rules.spacing > 0) {
-            double spacing = rules.spacing * zoom;
-            int firstY = rules.isGrid() ? 0 : px(CONTENT_TOP);
-            gc.setForeground(Gfx.color(rules.isGrid() ? new RGB(201, 214, 233) : new RGB(176, 198, 228)));
-            for (double ly = firstY; ly <= y + h; ly += spacing) if (ly >= y) gc.drawLine(x, (int) ly, x + w, (int) ly);
-            if (rules.isGrid()) {
-                for (double lx = 0; lx <= x + w; lx += spacing) if (lx >= x) gc.drawLine((int) lx, y, (int) lx, y + h);
-            } else {
-                gc.setForeground(Gfx.color(232, 140, 140));
-                int mx = px(36.5);
-                gc.drawLine(mx, Math.max(y, px(CONTENT_TOP - 10)), mx, y + h);
-            }
-        }
-        gc.setForeground(Gfx.color(184, 184, 184));
-        gc.drawLine(px(MARGIN), px(69.5), px(MARGIN + TITLE_WIDTH), px(69.5));
         paintInk(gc);
+    }
+
+    private Image paperImage;
+    private String paperKey = "";
+
+    /**
+     * The paper — its colour, rule lines or grid, and the line under the title — as the page's background picture,
+     * which the containers on it show through (the page is always drawn as light paper, as on the Mac).
+     */
+    private void updatePaper() {
+        Point size = paper.getSize();
+        String key = size.x + "x" + size.y + "|" + (content == null ? "" : content.color + "|" + content.rules) + "|" + zoom;
+        if (key.equals(paperKey) && paperImage != null) return;
+        paperKey = key;
+        Image old = paperImage;
+        paperImage = new Image(root.getDisplay(), Math.max(1, size.x), Math.max(1, size.y));
+        GC gc = new GC(paperImage);
+        try {
+            gc.setBackground(paperColor());
+            gc.fillRectangle(0, 0, size.x, size.y);
+            if (content != null) {
+                RuleLines rules = content.rules;
+                if (rules.spacing > 0) {
+                    double spacing = rules.spacing * zoom;
+                    int firstY = rules.isGrid() ? 0 : px(CONTENT_TOP);
+                    gc.setForeground(Gfx.color(rules.isGrid() ? new RGB(201, 214, 233) : new RGB(176, 198, 228)));
+                    for (double ly = firstY; ly <= size.y; ly += spacing) gc.drawLine(0, (int) ly, size.x, (int) ly);
+                    if (rules.isGrid()) {
+                        for (double lx = 0; lx <= size.x; lx += spacing) gc.drawLine((int) lx, 0, (int) lx, size.y);
+                    } else {
+                        gc.setForeground(Gfx.color(232, 140, 140));
+                        int mx = px(36.5);
+                        gc.drawLine(mx, px(CONTENT_TOP - 10), mx, size.y);
+                    }
+                }
+                gc.setForeground(Gfx.color(184, 184, 184));
+                gc.drawLine(px(MARGIN), px(69.5), px(MARGIN + TITLE_WIDTH), px(69.5));
+            }
+        } finally {
+            gc.dispose();
+        }
+        paper.setBackgroundImage(paperImage);
+        if (old != null) old.dispose();
     }
 
     /** The page's ink (pen strokes and shapes drawn on the Mac), shown as it was drawn. */
@@ -849,7 +884,7 @@ public final class PageView {
         if (link != null) {
             String url = t.styleAt(link[0]).link();
             ElementView.item(menu, "Open Link", () -> openLink(url));
-            ElementView.item(menu, "Edit Link…", () -> Dialogs.link(this, box));
+            ElementView.item(menu, "Edit Link…", () -> Dialogs.link(this, box.text));
             ElementView.item(menu, "Copy Link Address", () -> com.k3jdr.mx.core.ui.Clipboards.copyText(root.getDisplay(), url));
             ElementView.item(menu, "Remove Link", t::removeLink);
             new MenuItem(menu, SWT.SEPARATOR);
@@ -1108,7 +1143,7 @@ public final class PageView {
         table.headerRow = false;
         table.rows.get(0).set(0, text);
         table.columnWidths = new ArrayList<>(List.of(firstWidth, 120.0));
-        RText all = t.getContent();
+        RText all = t.getRichText();
         RText trailing = paraEnd < all.length() ? all.slice(paraEnd + 1, all.length()) : null;
         double paragraphTop = box.element.y + ElementView.GRIP + t.getLocationAtOffset(paraStart).y / zoom;
         double x = box.element.x;
@@ -1122,7 +1157,7 @@ public final class PageView {
                 tableY = box.element.y;
                 remove(box, false);
             } else {
-                t.setContent(all.slice(0, paraStart - 1));
+                t.setRichText(all.slice(0, paraStart - 1));
                 t.edited = true;
                 box.fit();
                 tableY = paragraphTop - ElementView.GRIP + 2;
@@ -1366,6 +1401,7 @@ public final class PageView {
         if (content == null) return;
         Snapshot before = snapshot();
         content.rules = r;
+        updatePaper();
         paper.redraw();
         pushUndo("Rule Lines", before);
         markDirty();
@@ -1405,6 +1441,109 @@ public final class PageView {
 
     public void deleteSelected() {
         if (selected != null) remove(selected, true);
+    }
+
+    private final List<Runnable> whenLoaded = new ArrayList<>();
+
+    /** Runs once the page shows (now, if it already does). */
+    public void whenLoaded(PageRef target, Runnable r) {
+        if (target.equals(ref) && content != null) r.run();
+        else whenLoaded.add(() -> {
+            if (target.equals(ref)) r.run();
+        });
+    }
+
+    /** The page as it shows, without frames and selections (printing and PDF). */
+    public Image capture() {
+        if (content == null) return null;
+        select(null);
+        for (ElementView v : views) {
+            v.hover = false;
+            v.setFramed();
+        }
+        if (activeTable != null && !activeTable.isDisposed()) activeTable.endEditing();
+        double maxX = MARGIN + TITLE_WIDTH, maxY = CONTENT_TOP;
+        for (ElementView v : views) {
+            maxX = Math.max(maxX, v.element.x + v.element.width);
+            maxY = Math.max(maxY, v.element.y + v.element.height);
+        }
+        updatePaper();
+        int w = Math.max(1, Math.min(paper.getSize().x, px(maxX + 40))), h = Math.max(1, Math.min(paper.getSize().y, px(maxY + 48)));
+        Image img = new Image(root.getDisplay(), w, h);
+        GC gc = new GC(img);
+        org.eclipse.swt.graphics.Transform tr = new org.eclipse.swt.graphics.Transform(root.getDisplay());
+        try {
+            gc.setAntialias(SWT.ON);
+            gc.setTextAntialias(SWT.ON);
+            if (paperImage != null) gc.drawImage(paperImage, 0, 0);
+            gc.setFont(title.getFont());
+            gc.setForeground(Gfx.color(Gfx.BLACK));
+            gc.drawText(title.getText(), px(MARGIN), px(24), true);
+            gc.setFont(date.getFont());
+            gc.setForeground(date.getForeground());
+            gc.drawText(date.getText(), px(MARGIN + 2), px(74), true);
+            for (ElementView v : orderedViews()) {
+                Rectangle b = v.getBounds();
+                Control c = v.content();
+                if (c == null) continue;
+                Rectangle cb = c.getBounds();
+                tr.identity();
+                tr.translate(b.x + cb.x, b.y + cb.y);
+                gc.setTransform(tr);
+                gc.setClipping(0, 0, cb.width, cb.height);
+                if (c instanceof NoteText t) {
+                    drawText(gc, t);
+                } else {
+                    Event e = new Event();
+                    e.gc = gc;
+                    e.x = 0;
+                    e.y = 0;
+                    e.width = cb.width;
+                    e.height = cb.height;
+                    c.notifyListeners(SWT.Paint, e);
+                }
+                gc.setClipping((Rectangle) null);
+                gc.setTransform(null);
+            }
+            paintInk(gc);
+        } finally {
+            tr.dispose();
+            gc.dispose();
+        }
+        return img;
+    }
+
+    /** A text box's text drawn line by line as the editor lays it out (its styles, indents and alignment). */
+    private void drawText(GC gc, NoteText t) {
+        Rectangle area = t.getClientArea();
+        int y = t.getTopMargin();
+        int width = area.width - t.getLeftMargin() - t.getRightMargin();
+        for (int line = 0; line < t.getLineCount(); line++) {
+            int start = t.getOffsetAtLine(line);
+            String text = t.getLine(line);
+            org.eclipse.swt.graphics.TextLayout l = new org.eclipse.swt.graphics.TextLayout(root.getDisplay());
+            try {
+                l.setText(text);
+                l.setFont(t.getFont());
+                l.setTabs(t.getTabStops());
+                l.setWidth(Math.max(1, width));
+                l.setIndent(t.getLineIndent(line));
+                l.setWrapIndent(t.getLineWrapIndent(line));
+                l.setAlignment(t.getLineAlignment(line));
+                l.setJustify(t.getLineJustify(line));
+                if (!text.isEmpty()) {
+                    for (org.eclipse.swt.custom.StyleRange r : t.getStyleRanges(start, text.length(), true)) {
+                        int a = Math.max(r.start, start) - start, z = Math.min(r.start + r.length, start + text.length()) - start;
+                        if (z > a) l.setStyle(r, a, z - 1);
+                    }
+                }
+                y += t.getLineVerticalIndent(line);
+                l.draw(gc, t.getLeftMargin(), y);
+                y += l.getBounds().height;
+            } finally {
+                l.dispose();
+            }
+        }
     }
 
     // MARK: Find on page
