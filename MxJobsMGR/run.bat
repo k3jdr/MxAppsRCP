@@ -1,0 +1,6 @@
+@echo off
+rem Runs MxJobsMGR from its built product, building it first when it has not been built.
+rem   run.bat [--build] [MxJobsMGR arguments...]
+rem --build rebuilds first; the arguments go to MxJobsMGR (a copy that is already running takes them over).
+call "%~dp0..\releng\tools\mxapp.cmd" run MxJobsMGR mxjobsmgr 8004 %*
+exit /b %ERRORLEVEL%

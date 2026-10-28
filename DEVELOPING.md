@@ -39,6 +39,14 @@ The products are in `<App>\com.k3jdr.<app>.product\target\products\`:
 `com.k3jdr.<app>.product\win32\win32\x86_64\<App>\<App>.exe`, and `<App>-win32-x86_64-win32.win32.x86_64.zip` to copy
 elsewhere. They need a Java 21 runtime on the PATH (or `JAVA_HOME`).
 
+Run or debug one app from its folder: `<App>\run.bat [--build] [args…]` starts `<App>.exe`;
+`<App>\debug.bat [--build] [--port N] [--suspend] [--osgi-console] [args…]` starts the console launcher
+`<App>c.exe` with `-consoleLog` and a JDWP agent on the app's port (MxDataSQL 8001, MxDataHUB 8002, MxFileMGR 8003,
+MxJobsMGR 8004, MxAcctMGR 8005, MxNoteONE 8006), appended to the `.ini`'s VM arguments
+(`--launcher.appendVmargs`). Both build the app when it has no product yet (offline first; online with the target
+and Shared installed when that fails) and use `JAVA_HOME`'s JVM when it is set. The logic is in
+`releng\tools\mxapp.cmd`.
+
 Check a build without clicking through it:
 
 ```powershell

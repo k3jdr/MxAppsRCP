@@ -27,7 +27,31 @@ mvn clean install
 Each app's launcher is then in
 `<App>\com.k3jdr.<app>.product\target\products\com.k3jdr.<app>.product\win32\win32\x86_64\<App>\<App>.exe`, and a zip
 of the whole app beside it (`<App>-win32-x86_64-win32.win32.x86_64.zip`) to unpack anywhere. The apps run on the Java
-21 found on the PATH or in `JAVA_HOME`.
+21 in `JAVA_HOME`, else the one on the PATH.
+
+Or, in an app's folder, use its **run.bat** and **debug.bat** (they build the app first when it has not been built):
+
+```bat
+MxDataSQL\run.bat                       :: start MxDataSQL
+MxDataSQL\run.bat --build               :: rebuild it, then start it
+MxDataHUB\run.bat -section Portfolios   :: arguments go to the app
+MxJobsMGR\debug.bat                     :: log in the console, Java debugger on localhost:8004
+MxJobsMGR\debug.bat --suspend           :: wait for the debugger before starting
+```
+
+| App | debug.bat port |
+|-----|----------------|
+| MxDataSQL | 8001 |
+| MxDataHUB | 8002 |
+| MxFileMGR | 8003 |
+| MxJobsMGR | 8004 |
+| MxAcctMGR | 8005 |
+| MxNoteONE | 8006 |
+
+Attach a debugger to that port: in Eclipse, *Run ▸ Debug Configurations ▸ Remote Java Application* (host
+`localhost`); in IntelliJ IDEA, *Remote JVM Debug*; in VS Code, a Java *attach* configuration. `--port N` uses
+another port and `--osgi-console` adds the OSGi console to the window. Close a running copy of the app before
+debugging it.
 
 Settings and the instance area live in `%APPDATA%\MxAppsRCP\<App>`. Passwords and API keys go to Eclipse secure
 storage, encrypted for your Windows account (in place of the macOS Keychain); MxAcctMGR's Secure Accounts and
