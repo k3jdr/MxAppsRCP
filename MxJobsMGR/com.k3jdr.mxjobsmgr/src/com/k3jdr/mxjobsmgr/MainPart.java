@@ -325,8 +325,11 @@ public class MainPart {
 
     /**
      * A developer aid for checking a build without clicking (releng smoke test): with the environment variable
-     * MXJOBSMGR_SELFTEST set, the first jobspace opened is run in Mock mode ("run-mock"), or its diagram is exported
-     * to a folder ("export:<folder>"). Nothing happens without it.
+     * MXJOBSMGR_SELFTEST set, the first jobspace opened is run in Mock mode ("run-mock"), its diagram is exported to a
+     * folder ("export:<folder>"), API Subscriptions ("subscriptions") or Layer 3 Services ("services") opens for it, or it is saved
+     * back to its file ("save"), or the editing commands are tried on it with the results written to a file
+     * ("edit:<file>").
+     * Nothing happens without it.
      */
     private void selfTest(Editor ed) {
         String test = System.getenv("MXJOBSMGR_SELFTEST");
@@ -337,6 +340,54 @@ public class MainPart {
             ed.space.run.stepDelay = 0.05;
             ed.changed();
             Display.getCurrent().timerExec(800, ed::startRun);
+        } else if (test.equals("save") && ed.file != null) {
+            ed.willChange(null);
+            ed.changed();
+            Display.getCurrent().timerExec(800, () -> save(ed, () -> status("Self-test: saved " + ed.file)));
+        } else if (test.startsWith("edit:")) {
+            Path out = Path.of(test.substring(5));
+            Display.getCurrent().timerExec(800, () -> {
+                StringBuilder r = new StringBuilder();
+                int nodes = ed.space.nodes.size(), links = ed.space.links.size();
+                ed.add(NodeKind.AGENT_TASK);
+                String a = ed.selectedNodes.iterator().next();
+                ed.add(NodeKind.API_READ);
+                String b = ed.selectedNodes.iterator().next();
+                ed.link(a, b);
+                r.append("add+link: ").append(ed.space.nodes.size() == nodes + 2 && ed.space.links.size() == links + 1).append('\n');
+                JobNode an = ed.space.node(a);
+                double x = an.x;
+                ed.select(a, false);
+                ed.nudge(100, 0);
+                r.append("nudge: ").append(ed.space.node(a).x == x + 100).append('\n');
+                ed.duplicateSelection();
+                r.append("duplicate: ").append(ed.space.nodes.size() == nodes + 3 && ed.space.node(ed.selectedNodes.iterator().next()).title.endsWith(" copy")).append('\n');
+                ed.toggleBreakpoint();
+                r.append("breakpoint: ").append(ed.space.node(ed.selectedNodes.iterator().next()).breakpoint).append('\n');
+                ed.addServiceStep(ServiceCatalog.service("portfolio-cpp").orElseThrow(), null);
+                JobNode svc = ed.space.node(ed.selectedNodes.iterator().next());
+                r.append("service step: ").append(svc.api.path).append(' ').append(svc.api.method.raw()).append(' ')
+                        .append(ed.space.subscription(svc.api.subscriptionID).baseURL).append('\n');
+                ed.selectAll();
+                ed.deleteSelection();
+                r.append("delete all: ").append(ed.space.nodes.isEmpty() && ed.space.links.isEmpty()).append('\n');
+                ed.undo();
+                r.append("undo: ").append(ed.space.nodes.size() == nodes + 4).append('\n');
+                for (int i = 0; i < 7; i++) ed.undo();
+                r.append("undo to start: ").append(ed.space.nodes.size() == nodes).append(' ').append(ed.canUndo()).append('\n');
+                ed.redo();
+                r.append("redo: ").append(ed.space.nodes.size() == nodes + 1).append('\n');
+                r.append("issues: ").append(ed.issues.size()).append('\n');
+                try {
+                    Files.writeString(out, r.toString(), StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    status("Self-test failed: " + e);
+                }
+            });
+        } else if (test.equals("subscriptions")) {
+            Display.getCurrent().timerExec(800, () -> showSubscriptions(ed, null));
+        } else if (test.equals("services")) {
+            Display.getCurrent().timerExec(800, () -> showServices(null));
         } else if (test.startsWith("export:")) {
             Path dir = Path.of(test.substring(7));
             try {
@@ -363,7 +414,7 @@ public class MainPart {
 
     private void activeChanged() {
         Editor ed = active();
-        shell.setText(ed == null ? LifeCycle.APP : LifeCycle.APP + " — " + ed.tabText() + (ed.file == null && !ed.title().equals(ed.space.name) ? "" : "  ·  " + ed.space.name));
+        shell.setText(ed == null ? LifeCycle.APP : LifeCycle.APP + " — " + ed.tabText() + (ed.title().equals(ed.space.name) || ed.space.name.isBlank() ? "" : "  ·  " + ed.space.name));
         if (ed != null) {
             ed.runBar.update();
             ed.setInspectorShown(inspectorShown);

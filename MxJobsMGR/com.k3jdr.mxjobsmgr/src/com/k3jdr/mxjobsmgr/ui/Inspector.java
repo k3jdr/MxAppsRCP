@@ -232,9 +232,7 @@ public final class Inspector {
         s.setValues(Math.max(min, Math.min(max, value)), min, max, 0, step, step * 10);
         s.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
         String key = "spin:" + builtFor + ":" + label;
-        s.addListener(SWT.Modify, e -> {
-            if (s.getSelection() != value || true) edit(key, () -> set.accept(s.getSelection()), false);
-        });
+        s.addListener(SWT.Modify, e -> edit(key, () -> set.accept(s.getSelection()), false));
         return s;
     }
 

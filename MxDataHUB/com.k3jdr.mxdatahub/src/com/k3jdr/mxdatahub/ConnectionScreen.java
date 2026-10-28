@@ -175,8 +175,8 @@ final class ConnectionScreen extends Composite implements Screen {
 
     @Override
     public void shown() {
+        // The keyboard stays where it is (the sidebar at startup): a stray Enter must not connect.
         updateButtons();
-        host.setFocus();
     }
 
     @Override

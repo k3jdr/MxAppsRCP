@@ -9,6 +9,8 @@ import java.util.Objects;
 
 import jakarta.annotation.PostConstruct;
 
+import org.eclipse.e4.ui.di.Focus;
+
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
@@ -83,6 +85,8 @@ public class MainPart {
     private boolean layoutPreview;
     /** A link that names a portfolio or benchmark not loaded yet. */
     private AppLink pendingLink;
+    /** The lists a pending link was last tried against. */
+    private Object pendingPortfolios, pendingBenchmarks;
 
     @PostConstruct
     public void create(Composite parent) {
@@ -112,6 +116,22 @@ public class MainPart {
         hubChanged();
         updateNavigation();
         start();
+    }
+
+    private boolean focusedOnce;
+
+    /**
+     * The part is activated (the window comes forward): the first time, the keyboard goes to the sidebar — not to a
+     * connection field, where Enter connects; afterwards it stays where the user left it.
+     */
+    @Focus
+    public void focus() {
+        if (sidebar == null || sidebar.tree().isDisposed()) return;
+        Control f = shell.getDisplay().getFocusControl();
+        if (!focusedOnce || f == null || f.getShell() != shell) {
+            focusedOnce = true;
+            sidebar.tree().setFocus();
+        }
     }
 
     // MARK: Building the window
@@ -374,7 +394,9 @@ public class MainPart {
             refreshScreen();
         }
         for (Screen s : List.copyOf(screens.values())) s.hubChanged();
-        if (pendingLink != null && hub.isConnected() && Boolean.TRUE.equals(hub.available)) {
+        // A link that named a portfolio or benchmark before the lists were there: try again when they change.
+        if (pendingLink != null && hub.isConnected() && Boolean.TRUE.equals(hub.available)
+                && (hub.portfolios != pendingPortfolios || hub.benchmarks != pendingBenchmarks)) {
             AppLink link = pendingLink;
             pendingLink = null;
             openLink(link);
@@ -536,6 +558,11 @@ public class MainPart {
         String auto = launch.get("autoconnect");
         boolean autoConnect = auto != null && List.of("yes", "true", "1").contains(auto.toLowerCase());
         show(requested != null ? requested : Section.CONNECTION);
+        // Start with the keyboard in the sidebar, not in a connection field where Enter connects. As on the Mac,
+        // only -autoConnect YES connects at startup.
+        shell.getDisplay().asyncExec(() -> {
+            if (!sidebar.tree().isDisposed()) sidebar.tree().setFocus();
+        });
         if (autoConnect && !hub.password.isEmpty()) {
             hub.connect(ok -> {
                 if (ok && Boolean.TRUE.equals(hub.available) && requested == null) show(Section.SECURITIES);
@@ -552,18 +579,24 @@ public class MainPart {
                 var match = hub.portfolios.stream().filter(x -> x.code().equalsIgnoreCase(p.code())).findFirst();
                 if (match.isPresent() && screens.get(Section.PORTFOLIOS) != null) screens.get(Section.PORTFOLIOS).selectItem(match.get().id());
                 else if (match.isPresent()) hub.selectedPortfolioId = match.get().id();
-                else if (!hub.isConnected() || hub.portfolios.isEmpty()) pendingLink = link;
+                else if (!hub.isConnected() || hub.portfolios.isEmpty()) pend(link);
             }
             case AppLink.Benchmark b -> {
                 show(Section.BENCHMARKS);
                 var match = hub.benchmarks.stream().filter(x -> x.code().equalsIgnoreCase(b.code())).findFirst();
                 if (match.isPresent() && screens.get(Section.BENCHMARKS) != null) screens.get(Section.BENCHMARKS).selectItem(match.get().id());
-                else if (!hub.isConnected() || hub.benchmarks.isEmpty()) pendingLink = link;
+                else if (!hub.isConnected() || hub.benchmarks.isEmpty()) pend(link);
             }
             case AppLink.DataRefresh d -> show(Section.REFRESH);
             case AppLink.Services s -> show(Section.SERVICES);
             default -> { }
         }
+    }
+
+    private void pend(AppLink link) {
+        pendingLink = link;
+        pendingPortfolios = hub.portfolios;
+        pendingBenchmarks = hub.benchmarks;
     }
 
     /** Arguments of a later launch (a link or a document), handed over by the running copy. */

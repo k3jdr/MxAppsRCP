@@ -20,7 +20,9 @@ import com.k3jdr.mx.core.Mx;
 /**
  * One running copy of an app, as on macOS: a second launch — Windows opening an mx…:// link, or a double-clicked
  * document — hands its arguments to the running copy over a loopback socket and exits. The running copy listens on
- * a port written to %APPDATA%\MxAppsRCP\&lt;app&gt;\instance.port.
+ * a port written to {@code instance.port} in its workspace (the -data instance area, by default
+ * %APPDATA%\MxAppsRCP\&lt;app&gt;\workspace), so one copy runs per workspace: a test launched with its own -data
+ * neither hands over to nor takes over the copy in use.
  */
 public final class SingleInstance {
     private SingleInstance() {}
@@ -33,7 +35,7 @@ public final class SingleInstance {
      * thread: switch to the UI thread there).
      */
     public static boolean claim(String app, String[] args, Consumer<List<String>> onArgs) {
-        Path portFile = Mx.appData(app).resolve("instance.port");
+        Path portFile = instanceFolder(app).resolve("instance.port");
         if (handOff(portFile, args)) return false;
         try {
             ServerSocket server = new ServerSocket();
@@ -46,6 +48,22 @@ public final class SingleInstance {
             // without the listener every launch opens its own copy, which still works
         }
         return true;
+    }
+
+    /** The workspace (instance area) when there is one, else %APPDATA%\MxAppsRCP\&lt;app&gt;. */
+    private static Path instanceFolder(String app) {
+        try {
+            var location = org.eclipse.core.runtime.Platform.getInstanceLocation();
+            if (location != null && location.isSet() && "file".equals(location.getURL().getProtocol())) {
+                // URIUtil copes with the unencoded URLs Equinox makes (a space in the folder name).
+                Path dir = Path.of(org.eclipse.core.runtime.URIUtil.toURI(location.getURL()));
+                Files.createDirectories(dir);
+                return dir;
+            }
+        } catch (Exception | LinkageError e) {
+            // no OSGi instance area (a plain Java test): fall back to the app's folder
+        }
+        return Mx.appData(app);
     }
 
     private static boolean handOff(Path portFile, String[] args) {

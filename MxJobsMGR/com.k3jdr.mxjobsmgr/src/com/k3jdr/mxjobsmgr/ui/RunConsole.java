@@ -73,6 +73,7 @@ public final class RunConsole {
         table.setFont(Ui.mono());
         for (int w : new int[] { 100, 24, 30, 900 }) new TableColumn(table, SWT.LEFT).setWidth(w);
         table.addListener(SWT.Selection, e -> {
+            if (!table.isFocusControl()) return;   // only the user's clicks and keys select a step
             TableItem item = table.getSelection().length == 0 ? null : table.getSelection()[0];
             if (item != null && item.getData() instanceof LogEntry entry && entry.nodeID() != null && editor.space.node(entry.nodeID()) != null) {
                 editor.reveal(entry.nodeID());

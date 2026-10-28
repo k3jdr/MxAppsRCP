@@ -21,3 +21,6 @@ configuration/org.eclipse.*
 ## OS
 Thumbs.db
 .DS_Store
+
+## Smoke tests: isolated workspaces, keyrings, screenshots and test folders
+.smoke/

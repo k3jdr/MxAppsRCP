@@ -540,12 +540,17 @@ final class Db {
         return out;
     }
 
+    /**
+     * Saves a link. The hover text is edited as plain text here: the formatted hover text (RTF) made on the Mac is
+     * kept while the plain text is unchanged, and dropped when it changes.
+     */
     void saveLink(long securityId, String field, SecurityLink link) throws SQLException {
         rows("""
-                INSERT INTO srm.security_link (security_id, field, address, display_text, hover_text, hover_rtf, link_title, updated_at, updated_by)
+                INSERT INTO srm.security_link AS l (security_id, field, address, display_text, hover_text, hover_rtf, link_title, updated_at, updated_by)
                 VALUES ($1::text::bigint, $2, $3, $4, $5, NULL, $6, now(), 'MxDataHUB')
                 ON CONFLICT (security_id, field) DO UPDATE SET address = excluded.address, display_text = excluded.display_text,
-                    hover_text = excluded.hover_text, hover_rtf = excluded.hover_rtf, link_title = excluded.link_title,
+                    hover_rtf = CASE WHEN l.hover_text IS NOT DISTINCT FROM excluded.hover_text THEN l.hover_rtf END,
+                    hover_text = excluded.hover_text, link_title = excluded.link_title,
                     updated_at = now(), updated_by = excluded.updated_by
                 RETURNING security_id::text
                 """, Long.toString(securityId), field, link.address(), blankToNull(link.text()), blankToNull(link.hover()),
