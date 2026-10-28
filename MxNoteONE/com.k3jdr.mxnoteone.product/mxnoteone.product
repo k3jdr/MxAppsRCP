@@ -20,7 +20,8 @@
    <windowImages i16="/com.k3jdr.mxnoteone/icons/app16.png" i32="/com.k3jdr.mxnoteone/icons/app32.png" i64="/com.k3jdr.mxnoteone/icons/app64.png" i128="/com.k3jdr.mxnoteone/icons/app128.png" i256="/com.k3jdr.mxnoteone/icons/app256.png"/>
 
    <launcher name="MxNoteONE">
-      <win useIco="false">
+      <win useIco="true">
+         <ico path="/com.k3jdr.mxnoteone.product/MxNoteONE.ico"/>
          <bmp/>
       </win>
    </launcher>

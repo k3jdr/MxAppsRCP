@@ -20,7 +20,8 @@
    <windowImages i16="/com.k3jdr.mxfilemgr/icons/app16.png" i32="/com.k3jdr.mxfilemgr/icons/app32.png" i64="/com.k3jdr.mxfilemgr/icons/app64.png" i128="/com.k3jdr.mxfilemgr/icons/app128.png" i256="/com.k3jdr.mxfilemgr/icons/app256.png"/>
 
    <launcher name="MxFileMGR">
-      <win useIco="false">
+      <win useIco="true">
+         <ico path="/com.k3jdr.mxfilemgr.product/MxFileMGR.ico"/>
          <bmp/>
       </win>
    </launcher>
