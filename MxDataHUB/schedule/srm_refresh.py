@@ -54,10 +54,17 @@ DEFAULT_IOS_REPO = os.environ.get("MXAPPSIOS_HOME") or r"D:\MyCodeGIT\MxAppsIOS"
 OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
-def secrets():
-    """The Credential Manager entries srm.py reads ("service:account"), and what needs each."""
-    db = "%s@%s/%s" % (os.environ.get("SRM_PGUSER") or "postgres", os.environ.get("SRM_PGHOST") or "192.168.0.223",
-                       os.environ.get("SRM_PGDATABASE") or "srm")
+def secrets(ios_repo):
+    """The Credential Manager entries srm.py reads ("service:account"), and what needs each. The database account is
+    the one srm.py signs in with: SRM_PGUSER etc., else config.local.json's "database", else postgres@192.168.0.223/srm."""
+    try:
+        with open(os.path.join(ios_repo, "MxDataHUB", "SRM", "config.local.json"), encoding="utf-8") as f:
+            local = json.load(f).get("database") or {}
+    except (OSError, ValueError, AttributeError):
+        local = {}
+    db = "%s@%s/%s" % (os.environ.get("SRM_PGUSER") or local.get("user", "postgres"),
+                       os.environ.get("SRM_PGHOST") or local.get("host", "192.168.0.223"),
+                       os.environ.get("SRM_PGDATABASE") or local.get("dbname", "srm"))
     return [("SRM-postgres:" + db, "the database password: every loader"),
             ("SRM-api:fmp", "FMP: prices, profiles, corporate actions, fundamentals, earnings symbols"),
             ("SRM-api:openfigi", "OpenFIGI: identifiers (slower without a key)"),
@@ -275,7 +282,9 @@ def run(args):
             if status != 200:
                 log("x The categories could not be read: %s" % (body.get("error") or "HTTP %d" % status).strip())
                 if "password" in (body.get("error") or ""):
-                    log("  Save the database password: cmdkey /generic:%s /user:postgres /pass" % secrets()[0][0])
+                    target = secrets(args.ios_repo)[0][0]
+                    log("  Save the database password: cmdkey /generic:%s /user:%s /pass"
+                        % (target, target.split(":", 1)[1].split("@")[0]))
                 return finish(args, log, outcome, 1)
             log("Categories (+ refreshed now):")
             plan = choose(body.get("categories", []), args, log)
@@ -426,7 +435,7 @@ def status(args):
               % os.path.join(args.ios_repo, "MxDataHUB", "SRM", "config.local.json"))
     if WINDOWS:
         print("\nSecrets in the Credential Manager (srm.py also reads environment variables and config.local.json):")
-        for target, what in secrets():
+        for target, what in secrets(args.ios_repo):
             listed = subprocess.run(["cmdkey", "/list:" + target], capture_output=True, text=True).stdout
             saved = "Target:" in listed
             print("  %-5s %-42s %s" % ("saved" if saved else "-", target, what))

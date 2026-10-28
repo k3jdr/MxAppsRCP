@@ -108,6 +108,10 @@ SEC EDGAR wants a User-Agent with a contact e-mail. Put `"sec_user_agent": "Name
 `MxAppsIOS\MxDataHUB\SRM\config.local.json`, which the loaders read on every load. Or set `SRM_SEC_USER_AGENT`
 and restart srm-loader from a console opened after `setx`.
 
+The loaders don't have to sign in as the superuser `postgres`. `MxAppsIOS\MxDataHUB\SRM\admin\least_privilege_roles.sql`
+creates `srm_app`, which can only read and write rows; the SRM README's *Database roles* explains the switch. The
+scheduled refresh then signs in as whatever user `config.local.json` names.
+
 The task runs as you **while you are signed in** (a locked screen is fine). It wakes the PC, and a run missed while the
 PC was off starts when it is back. To run it while signed out too, open it in Task Scheduler, choose *Run whether
 user is logged on or not*, and give your Windows password there. That logon keeps the Credential Manager available.
