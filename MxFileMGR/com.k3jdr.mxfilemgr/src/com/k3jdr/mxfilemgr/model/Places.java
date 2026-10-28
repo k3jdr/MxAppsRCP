@@ -129,9 +129,35 @@ public final class Places {
     private static List<Cloud> cache;
     private static long cacheTime;
 
-    /** The cloud folders present on this PC, re-scanned at most every few seconds. */
-    public static synchronized List<Cloud> cloudLocations() {
-        if (cache != null && System.currentTimeMillis() - cacheTime < 5000) return cache;
+    private static boolean rescanning;
+
+    /**
+     * The cloud folders present on this PC. The first call scans; later calls answer from the cache and, when it
+     * is a few seconds old, re-scan in the background (the path bar asks on every repaint).
+     */
+    public static List<Cloud> cloudLocations() {
+        synchronized (Places.class) {
+            if (cache != null) {
+                if (System.currentTimeMillis() - cacheTime > 5000 && !rescanning) {
+                    rescanning = true;
+                    Thread t = new Thread(() -> {
+                        try {
+                            rescanClouds();
+                        } finally {
+                            rescanning = false;
+                        }
+                    }, "MxFileMGR cloud scan");
+                    t.setDaemon(true);
+                    t.start();
+                }
+                return cache;
+            }
+        }
+        return rescanClouds();
+    }
+
+    /** Scans for the cloud folders now (off the UI thread when possible). */
+    public static List<Cloud> rescanClouds() {
         List<Cloud> list = new ArrayList<>();
         try {
             Path icloud = home().resolve("iCloudDrive");
@@ -149,9 +175,11 @@ public final class Places {
         } catch (Throwable t) {
             // whatever was found is shown
         }
-        cache = List.copyOf(list);
-        cacheTime = System.currentTimeMillis();
-        return cache;
+        synchronized (Places.class) {
+            cache = List.copyOf(list);
+            cacheTime = System.currentTimeMillis();
+            return cache;
+        }
     }
 
     public static Cloud cloudAt(Path p) {

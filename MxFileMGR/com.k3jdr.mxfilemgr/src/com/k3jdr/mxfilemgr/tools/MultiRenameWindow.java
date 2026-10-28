@@ -88,6 +88,7 @@ public final class MultiRenameWindow {
         buildFooter();
         shell.open();
         nameMask.setFocus();
+        nameMask.selectAll();
         reload();
     }
 
