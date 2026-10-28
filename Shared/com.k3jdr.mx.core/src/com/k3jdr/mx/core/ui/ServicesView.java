@@ -30,6 +30,7 @@ public final class ServicesView extends Composite {
     private final ScrolledComposite scroller;
     private final Label summary;
     private final Map<String, Boolean> running = new HashMap<>();
+    private final java.util.List<Consumer<Service>> selectionListeners = new java.util.ArrayList<>();
     private final String openSampleTitle;
     private final Consumer<Sample> openSample;
 
@@ -42,7 +43,7 @@ public final class ServicesView extends Composite {
         this.openSampleTitle = openSampleTitle;
         this.openSample = openSample;
         setLayout(Ui.grid(1, 0, 0));
-        SplitPanes split = new SplitPanes(this, "services", 260, 520, 330, 380);
+        SplitPanes split = new SplitPanes(this, "services", 260, 560, 400, 380);
         split.setLayoutData(Ui.fill());
 
         Composite left = split.leading();
@@ -57,7 +58,7 @@ public final class ServicesView extends Composite {
         table = new Table(left, SWT.BORDER | SWT.SINGLE | SWT.FULL_SELECTION);
         table.setHeaderVisible(true);
         table.setLayoutData(Ui.fill());
-        for (String[] c : new String[][] { { "Service", "190" }, { "Language", "70" }, { "Port", "50" }, { "State", "80" } }) {
+        for (String[] c : new String[][] { { "Service", "175" }, { "Language", "70" }, { "Port", "50" }, { "State", "75" } }) {
             TableColumn col = new TableColumn(table, SWT.LEFT);
             col.setText(c[0]);
             col.setWidth(Integer.parseInt(c[1]));
@@ -74,7 +75,10 @@ public final class ServicesView extends Composite {
             Service s = (Service) item.getData();
             return new QuickHelpItem(s.name(), s.language() + " on port " + s.port() + ". " + s.purpose());
         });
-        table.addListener(SWT.Selection, e -> showDetail());
+        table.addListener(SWT.Selection, e -> {
+            showDetail();
+            selectionListeners.forEach(l -> l.accept(selectedService()));
+        });
 
         Label guide = Ui.label(left, "Choosing a language", Ui.bold());
         guide.setLayoutData(Ui.fillH());
@@ -120,8 +124,20 @@ public final class ServicesView extends Composite {
             if (((Service) items[i].getData()).id().equals(serviceId)) {
                 table.setSelection(i);
                 showDetail();
+                selectionListeners.forEach(l -> l.accept(selectedService()));
             }
         }
+    }
+
+    /** The service selected in the list (the first when none is). */
+    public Service selectedService() {
+        int i = Math.max(0, table.getSelectionIndex());
+        return table.getItemCount() > i && table.getItem(i).getData() instanceof Service s ? s : ServiceCatalog.ALL.get(0);
+    }
+
+    /** Told the newly selected service whenever the selection changes (MxJobsMGR's Add Step bar follows it). */
+    public void onSelect(Consumer<Service> listener) {
+        selectionListeners.add(listener);
     }
 
     private void showDetail() {

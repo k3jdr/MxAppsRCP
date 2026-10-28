@@ -173,6 +173,7 @@ final class SecureDialog extends FormDialog {
             boolean kept = (pk.equals(savedProduct) || KeyStore.set(path, KeyStore.PRODUCT_KEY, pk))
                     && (sk.equals(savedService) || KeyStore.set(path, KeyStore.SERVICE_KEY, sk))
                     && (pw.equals(savedPassword) || KeyStore.set(path, KeyStore.PASSWORD, pw));
+            KeyStore.setName(savedId, product);
             return kept ? null : "Saved, but secure storage didn't take a key or the password.";
         };
     }

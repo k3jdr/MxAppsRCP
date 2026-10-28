@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.k3jdr.mx.core.Mx;
-import com.k3jdr.mxjobsmgr.model.AppleJson;
+import com.k3jdr.mx.core.json.AppleJson;
 import com.k3jdr.mxjobsmgr.model.ApiSubscription;
 import com.k3jdr.mxjobsmgr.model.JobNode;
 import com.k3jdr.mxjobsmgr.model.Specs.Argument;

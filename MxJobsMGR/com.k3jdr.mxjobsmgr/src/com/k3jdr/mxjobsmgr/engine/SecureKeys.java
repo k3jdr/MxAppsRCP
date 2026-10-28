@@ -1,11 +1,7 @@
 package com.k3jdr.mxjobsmgr.engine;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
-
-import org.eclipse.equinox.security.storage.ISecurePreferences;
-import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
 
 import com.k3jdr.mx.core.secure.Secrets;
 import com.k3jdr.mxjobsmgr.model.ApiSubscription;
@@ -40,14 +36,7 @@ public final class SecureKeys {
 
     /** Whether the account has a service key stored, without decrypting it. */
     public static boolean hasKey(int id) {
-        try {
-            ISecurePreferences root = SecurePreferencesFactory.getDefault();
-            String p = path(id);
-            if (root == null || !root.nodeExists(p)) return false;
-            return Arrays.asList(root.node(p).keys()).contains(KEY);
-        } catch (RuntimeException e) {
-            return false;
-        }
+        return Secrets.has(path(id), KEY);
     }
 
     /**
@@ -56,25 +45,16 @@ public final class SecureKeys {
      */
     public static Map<Integer, String> stored() {
         Map<Integer, String> out = new TreeMap<>();
-        try {
-            ISecurePreferences root = SecurePreferencesFactory.getDefault();
-            String p = Secrets.path(Secrets.SECURE_ACCOUNTS);
-            if (root == null || !root.nodeExists(p)) return out;
-            ISecurePreferences accounts = root.node(p);
-            for (String child : accounts.childrenNames()) {
-                try {
-                    int id = Integer.parseInt(child);
-                    ISecurePreferences node = accounts.node(child);
-                    if (!Arrays.asList(node.keys()).contains(KEY)) continue;
-                    String name = null;
-                    if (Arrays.asList(node.keys()).contains("name") && !node.isEncrypted("name")) name = node.get("name", null);
-                    out.put(id, name == null || name.isBlank() ? "Secure account " + id : name);
-                } catch (Exception e) {
-                    // not an account node
-                }
+        for (String child : Secrets.children(Secrets.path(Secrets.SECURE_ACCOUNTS))) {
+            int id;
+            try {
+                id = Integer.parseInt(child);
+            } catch (NumberFormatException e) {
+                continue;     // not an account node
             }
-        } catch (RuntimeException e) {
-            // no secure storage
+            if (!hasKey(id)) continue;
+            String name = Secrets.getUnencrypted(path(id), "name").filter(n -> !n.isBlank()).orElse("Secure account " + id);
+            out.put(id, name);
         }
         return out;
     }

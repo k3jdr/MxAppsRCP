@@ -9,7 +9,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import com.k3jdr.mxjobsmgr.model.AppleJson;
+import com.k3jdr.mx.core.json.AppleJson;
 
 /** The run's JSON values (Gson trees): dotted-path lookup, text for the console and the checks. */
 public final class Values {

@@ -101,9 +101,9 @@ public final class WorkspaceWindow implements Windows.HelpWindow {
             @Override public void viewChanged() { documentChanged(); }
             @Override public void widthsChanged(String table, Map<String, Double> widths) { setWidths(table, widths); }
         });
-        if (main) QuickHelp.get().createDockedPanel(parent);
+        QuickHelp.get().createDockedPanel(parent);     // every workspace window docks its own, as on the Mac
         status = new StatusBar(parent, session, () -> doc.connection);
-        shell.setMinimumSize(780, main ? 660 : 540);
+        shell.setMinimumSize(780, 660);
 
         buildMenus();
         session.addListener(this::refresh);

@@ -16,7 +16,6 @@ Require-Bundle: com.k3jdr.mx.core,
  org.eclipse.e4.core.di,
  org.eclipse.e4.core.contexts,
  org.eclipse.e4.core.services,
- org.eclipse.equinox.app,
- org.eclipse.equinox.security
+ org.eclipse.equinox.app
 Import-Package: jakarta.inject;version="[2.0.0,3.0.0)",
  jakarta.annotation;version="[2.1.0,4.0.0)"

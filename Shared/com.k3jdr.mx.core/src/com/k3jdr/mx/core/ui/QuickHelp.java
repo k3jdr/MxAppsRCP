@@ -27,8 +27,9 @@ import com.k3jdr.mx.core.prefs.Prefs;
  *
  * <p>Tell it about controls with {@link #help(Control, String, String, String)} (static text) or
  * {@link #provider(Control, Provider)} (text that depends on where the pointer is, e.g. a table's row), and about
- * the window with {@link #setSelection(Supplier)} and {@link #setScreen(Supplier)}. Put the docked panel where the
- * app wants it with {@link #createDockedPanel(Composite)} (its parent must use a GridLayout). View ▸ Quick Help
+ * the window with {@link #setSelection(Supplier)} and {@link #setScreen(Supplier)} — or, in an app with several
+ * windows, per window with {@link #setSelection(Shell, Supplier)} and {@link #setScreen(Shell, Supplier)}. Put a docked
+ * panel where each window wants it with {@link #createDockedPanel(Composite)} (its parent must use a GridLayout). View ▸ Quick Help
  * (Ctrl+Alt+/) shows or hides it; View ▸ Float Quick Help moves it into a small window of its own; closing that
  * window docks it again. Both are remembered.
  */
@@ -72,8 +73,10 @@ public final class QuickHelp {
     private final List<Runnable> stateListeners = new ArrayList<>();
     private Supplier<QuickHelpItem> selection = () -> null;
     private Supplier<QuickHelpItem> screen = () -> null;
+    private final java.util.Map<Shell, WindowHelp> windows = new java.util.HashMap<>();
+    private Shell lastWindow;
     private QuickHelpItem shown;
-    private Panel docked;
+    private final List<Panel> docked = new ArrayList<>();
     private Shell floatShell;
     private boolean visible;
     private boolean floating;
@@ -89,16 +92,60 @@ public final class QuickHelp {
         display.addFilter(SWT.Selection, e -> display.asyncExec(this::update));
     }
 
-    /** What's selected in the window, said when the pointer is over nothing with help of its own. */
+    /** What's selected, said when the pointer is over nothing with help of its own (for the app's only window). */
     public void setSelection(Supplier<QuickHelpItem> selection) {
         this.selection = selection == null ? () -> null : selection;
         display.asyncExec(this::update);
     }
 
-    /** The screen the window shows, said last. */
+    /** The screen shown, said last (for the app's only window). */
     public void setScreen(Supplier<QuickHelpItem> screen) {
         this.screen = screen == null ? () -> null : screen;
         display.asyncExec(this::update);
+    }
+
+    /**
+     * What's selected in {@code window}, for an app with several windows (workspaces, table windows): Quick Help uses
+     * the suppliers of the window in front — or of the one last in front while a dialog or the floating panel is —
+     * and falls back to {@link #setSelection(Supplier)}. Forgotten when the window closes.
+     */
+    public void setSelection(Shell window, Supplier<QuickHelpItem> selection) {
+        windowHelp(window).selection = selection == null ? () -> null : selection;
+        display.asyncExec(this::update);
+    }
+
+    /** The screen {@code window} shows; see {@link #setSelection(Shell, Supplier)}. */
+    public void setScreen(Shell window, Supplier<QuickHelpItem> screen) {
+        windowHelp(window).screen = screen == null ? () -> null : screen;
+        display.asyncExec(this::update);
+    }
+
+    /** A window's own screen and selection suppliers. */
+    private static final class WindowHelp {
+        Supplier<QuickHelpItem> screen = () -> null;
+        Supplier<QuickHelpItem> selection = () -> null;
+    }
+
+    private WindowHelp windowHelp(Shell window) {
+        return windows.computeIfAbsent(window, w -> {
+            w.addListener(SWT.Activate, e -> lastWindow = w);
+            w.addListener(SWT.Dispose, e -> {
+                windows.remove(w);
+                if (lastWindow == w) lastWindow = null;
+            });
+            if (lastWindow == null) lastWindow = w;
+            return new WindowHelp();
+        });
+    }
+
+    /** The suppliers of the window in front (walking up from a dialog to its owner), else of the one last in front. */
+    private WindowHelp frontWindowHelp() {
+        Shell active = display.getActiveShell();
+        for (Shell at = active; at != null; at = at.getParent() instanceof Shell p ? p : null) {
+            WindowHelp h = windows.get(at);
+            if (h != null) return h;
+        }
+        return lastWindow == null ? null : windows.get(lastWindow);
     }
 
     public boolean isVisible() { return visible; }
@@ -130,25 +177,27 @@ public final class QuickHelp {
         view.check("&Float Quick Help", 0, this::isFloating, v -> setFloating(v));
     }
 
-    /** The docked panel, created once per window; it hides itself while Quick Help is off or floating. */
+    /**
+     * A docked panel for the window holding {@code parent} (its parent must use a GridLayout); each window may have its
+     * own. It hides itself while Quick Help is off or floating.
+     */
     public Composite createDockedPanel(Composite parent) {
-        docked = new Panel(parent, true);
+        Panel panel = new Panel(parent, true);
         GridData gd = new GridData(SWT.FILL, SWT.END, true, false);
         gd.heightHint = 118;
-        docked.root.setLayoutData(gd);
-        docked.root.addListener(SWT.Dispose, e -> {
-            panels.remove(docked);
-            docked = null;
-        });
+        panel.root.setLayoutData(gd);
+        docked.add(panel);
+        panel.root.addListener(SWT.Dispose, e -> docked.remove(panel));
         sync();
-        return docked.root;
+        return panel.root;
     }
 
     private void sync() {
         boolean showDocked = visible && !floating;
-        if (docked != null && !docked.root.isDisposed()) {
-            Ui.setVisible(docked.root, showDocked);
-            docked.root.getParent().layout(true, true);
+        for (Panel panel : List.copyOf(docked)) {
+            if (panel.root.isDisposed()) continue;
+            Ui.setVisible(panel.root, showDocked);
+            panel.root.getParent().layout(true, true);
         }
         if (visible && floating) openFloat();
         else closeFloat();
@@ -159,7 +208,8 @@ public final class QuickHelp {
 
     private void openFloat() {
         if (floatShell != null && !floatShell.isDisposed()) return;
-        Shell owner = docked != null && !docked.root.isDisposed() ? docked.root.getShell() : display.getActiveShell();
+        Shell owner = lastWindow != null && !lastWindow.isDisposed() ? lastWindow
+                : docked.stream().filter(p -> !p.root.isDisposed()).map(p -> p.root.getShell()).findFirst().orElse(display.getActiveShell());
         floatShell = owner != null ? new Shell(owner, SWT.TOOL | SWT.TITLE | SWT.CLOSE | SWT.RESIZE)
                 : new Shell(display, SWT.TOOL | SWT.TITLE | SWT.CLOSE | SWT.RESIZE);
         floatShell.setText("Quick Help");
@@ -195,7 +245,10 @@ public final class QuickHelp {
     public void update() {
         if (panels.isEmpty() || !visible) return;
         QuickHelpItem item = underPointer();
+        WindowHelp front = frontWindowHelp();
+        if (item == null && front != null) item = front.selection.get();
         if (item == null) item = selection.get();
+        if (item == null && front != null) item = front.screen.get();
         if (item == null) item = screen.get();
         if (item == null) item = new QuickHelpItem("Quick Help", "Rest the pointer on something to learn what it does.", null);
         if (Objects.equals(item, shown)) return;

@@ -65,17 +65,18 @@ Active Target Platform*. Run an app from its `.product` file (*Launch an Eclipse
 
 | Package | What it gives the apps | macOS counterpart |
 |---|---|---|
-| `ui.MenuBarBuilder` | The menu bar in code: items with accelerators and enablement, check and radio items, submenus, menus rebuilt on opening | `CommandMenu`s |
+| `ui.MenuBarBuilder` | The menu bar in code: items with accelerators and enablement, labels that change when the menu opens (Run / Continue, Show / Hide), check and radio items, submenus, menus rebuilt on opening | `CommandMenu`s |
 | `ui.EditActions` | Cut / Copy / Paste / Select All that act on the focused text field, else on the app's target | the responder chain |
-| `ui.QuickHelp` | The Quick Help panel: `QuickHelp.help(control, title, detail, shortcut)`, `QuickHelp.provider(control, …)`, `setSelection`, `setScreen`, `createDockedPanel`, View ▸ Quick Help / Float | `Shared/QuickHelp` |
+| `ui.QuickHelp` | The Quick Help panel: `QuickHelp.help(control, title, detail, shortcut)`, `QuickHelp.provider(control, …)`, `setSelection` / `setScreen` (per window with a `Shell` for apps with several windows — the window in front speaks), `createDockedPanel` (one per window), View ▸ Quick Help / Float | `Shared/QuickHelp` |
 | `ui.SplitPanes` | Two panes with a divider whose leading width is remembered | `Shared/SplitPanes.swift` |
 | `ui.Sidebar` | A sidebar of screens in groups, with Quick Help | the apps' sidebars |
 | `ui.TableCopy` | Copy rows as tab-separated columns under the titles; Copy Row menu items | `Shared/Copy/TableCopy.swift` |
 | `ui.NavigationHistory` | Back / Forward / History with coalescing, and the Go menu items | `Navigation.swift` |
-| `ui.ServicesView` | The Layer 3 services and their samples | `Shared/ServicesView.swift` |
+| `ui.ServicesView` | The Layer 3 services and their samples; `selectedService()` and `onSelect(…)` for tools that act on the selection (MxJobsMGR's Add Step) | `Shared/ServicesView.swift` |
 | `ui.ErrorDialog`, `ui.Background`, `ui.Ui`, `ui.Clipboards`, `ui.WindowState` | Selectable error text with Copy; work off the UI thread; layout, fonts, colours; clipboard text; window bounds | |
-| `db.Pg`, `db.PgSettings` | PostgreSQL connections (sslmode disable / prefer / require without certificate checks), helpers, saved passwords | `PostgresService.swift` |
-| `secure.Secrets` | Eclipse secure storage (Windows DPAPI) in place of the Keychain; shared by all apps: `/com.k3jdr.mx/secure-accounts/<id>` holds the service keys | `Keychain.swift`, `SharedKeys.swift` |
+| `db.Pg`, `db.PgSettings` | PostgreSQL connections (sslmode disable / prefer / require without certificate checks, plus any pgjdbc properties), helpers, saved passwords | `PostgresService.swift` |
+| `secure.Secrets` | Eclipse secure storage (Windows DPAPI) in place of the Keychain, shared by all apps: `/com.k3jdr.mx/secure-accounts/<id>` holds the service keys and, unencrypted, the account's name. `has` and `children` answer without decrypting; `getUnencrypted` reads only plain values | `Keychain.swift`, `SharedKeys.swift` |
+| `json.AppleJson` | JSON byte for byte as the Mac apps' `JSONEncoder` writes it (pretty, sorted keys, slashes escaped or not), so jobspaces, workspaces and notebooks round-trip between the systems | `JSONEncoder` |
 | `links.AppLink`, `AppLinks`, `SingleInstance` | `mxdatahub://`, `mxjobsmgr://`, `mxacctmgr://` links: parse, build, open, register with Windows (HKCU), hand over to the running copy | `Shared/AppLinks.swift`, Info.plist URL types |
 | `services.ServiceCatalog` | The Layer 3 services and sample workflows, and whether each runs | `Shared/ServiceCatalog.swift` |
 | `prefs.Prefs`, `json.Json`, `http.Http`, `Mx` | Settings, JSON as the Mac apps write it, HTTP for the services, the family's names and folders | `UserDefaults`, `JSONEncoder`, `URLSession` |

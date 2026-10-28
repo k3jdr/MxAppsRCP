@@ -1,10 +1,6 @@
 package com.k3jdr.mxacctmgr.bank;
 
-import java.util.Arrays;
 import java.util.List;
-
-import org.eclipse.equinox.security.storage.ISecurePreferences;
-import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
 
 import com.k3jdr.mx.core.secure.Secrets;
 
@@ -13,14 +9,15 @@ import com.k3jdr.mx.core.secure.Secrets;
  * storage, encrypted for the Windows user, never the security master.
  *
  * <pre>
- *   /com.k3jdr.mx/secure-accounts/&lt;id&gt;                 service key, product key, password   (MxJobsMGR reads "service key")
+ *   /com.k3jdr.mx/secure-accounts/&lt;id&gt;                 service key, product key, password, name (unencrypted)
+ *                                                      (MxJobsMGR reads "service key" and lists the names)
  *   /com.k3jdr.mx/MxAcctMGR/target-accounts/&lt;id&gt;       password, user keys
  * </pre>
  */
 public final class KeyStore {
     private KeyStore() {}
 
-    public static final String SERVICE_KEY = "service key", PRODUCT_KEY = "product key", PASSWORD = "password", USER_KEYS = "user keys";
+    public static final String SERVICE_KEY = "service key", PRODUCT_KEY = "product key", PASSWORD = "password", USER_KEYS = "user keys", NAME = "name";
 
     public static String secure(int id) { return Secrets.path(Secrets.SECURE_ACCOUNTS, String.valueOf(id)); }
 
@@ -38,15 +35,17 @@ public final class KeyStore {
         return Secrets.put(path, key, value);
     }
 
+    /**
+     * Keeps the secure account's name beside its keys, unencrypted, so MxJobsMGR's API Subscriptions can list the
+     * accounts that have a service key — by name — without decrypting anything, also while the accounts service is down.
+     */
+    public static void setName(int id, String name) {
+        if (name != null && !name.isBlank()) Secrets.put(secure(id), NAME, name, false);
+    }
+
     /** Whether it is stored, without decrypting it (the Keys column). */
     public static boolean has(String path, String key) {
-        try {
-            ISecurePreferences root = SecurePreferencesFactory.getDefault();
-            if (root == null || !root.nodeExists(path)) return false;
-            return Arrays.asList(root.node(path).keys()).contains(key);
-        } catch (RuntimeException e) {
-            return false;
-        }
+        return Secrets.has(path, key);
     }
 
     /** Which of a secure account's keys and password are stored: "service key, product key, password". */

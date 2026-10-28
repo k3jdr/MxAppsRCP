@@ -23,6 +23,14 @@ public final class Pg {
 
     /** Opens a connection; {@code appName} shows in pg_stat_activity. */
     public static Connection connect(PgSettings s, String password, String appName) throws SQLException {
+        return connect(s, password, appName, null);
+    }
+
+    /**
+     * Opens a connection with further pgjdbc properties (e.g. {@code options=-c statement_timeout=30s},
+     * {@code readOnly=true}, {@code socketTimeout}); they are applied after, and so override, the defaults below.
+     */
+    public static Connection connect(PgSettings s, String password, String appName, Properties extra) throws SQLException {
         Properties p = new Properties();
         p.setProperty("user", s.user());
         if (password != null && !password.isEmpty()) p.setProperty("password", password);
@@ -31,6 +39,7 @@ public final class Pg {
         p.setProperty("tcpKeepAlive", "true");
         p.setProperty("sslmode", s.sslMode());
         if (!"disable".equals(s.sslMode())) p.setProperty("sslfactory", "org.postgresql.ssl.NonValidatingFactory");
+        if (extra != null) p.putAll(extra);
         Connection c = new org.postgresql.Driver().connect(s.url(), p);
         if (c == null) throw new SQLException("The PostgreSQL driver did not accept " + s.url());
         return c;

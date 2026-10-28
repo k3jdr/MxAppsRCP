@@ -20,7 +20,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.k3jdr.mxjobsmgr.model.AppleJson;
+import com.k3jdr.mx.core.json.AppleJson;
 import com.k3jdr.mxjobsmgr.model.ApiSubscription;
 import com.k3jdr.mxjobsmgr.model.JobLink;
 import com.k3jdr.mxjobsmgr.model.JobNode;

@@ -11,6 +11,7 @@ import java.util.Set;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.k3jdr.mx.core.json.AppleJson;
 import com.k3jdr.mxjobsmgr.model.Specs.RunSettings;
 
 /**

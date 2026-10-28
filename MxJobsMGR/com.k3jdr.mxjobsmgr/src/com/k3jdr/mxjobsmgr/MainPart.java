@@ -205,9 +205,14 @@ public class MainPart {
         QuickHelp.get().addMenuItems(mb.menu("&View"));
 
         MenuBarBuilder.MenuBuilder run = mb.menu("&Run");
-        run.item("&Run", SWT.MOD1 | 'R', () -> withActive(Editor::startRun),
+        // Run becomes Continue while a run is paused, as on the Mac (F8 continues too).
+        run.item(() -> active() != null && active().run.canContinue() ? "&Continue" : "&Run", SWT.MOD1 | 'R',
+                        () -> withActive(ed -> {
+                            if (ed.run.canContinue()) ed.run.continueRun();
+                            else ed.startRun();
+                        }),
                         () -> active() != null && !(active().run.isActive() && !active().run.canContinue()))
-                .item("&Continue", SWT.F8, () -> withActive(ed -> ed.run.continueRun()), () -> active() != null && active().run.canContinue())
+                .item("Co&ntinue", SWT.F8, () -> withActive(ed -> ed.run.continueRun()), () -> active() != null && active().run.canContinue())
                 .item("&Step", SWT.F6, () -> withActive(Editor::stepRun),
                         () -> active() != null && active().run.phase() != Phase.RUNNING && active().run.phase() != Phase.WAITING)
                 .item("&Pause", 0, () -> withActive(ed -> ed.run.pause()), () -> active() != null && active().run.phase() == Phase.RUNNING)
@@ -217,8 +222,8 @@ public class MainPart {
                 .check("Breakpoints &Active", SWT.MOD1 | 'Y', () -> active() != null && active().space.run.breakpointsEnabled,
                         v -> withActive(Editor::toggleBreakpoints))
                 .separator()
-                .check("Run C&onsole", SWT.MOD1 | SWT.SHIFT | 'Y', () -> active() != null && active().isConsoleShown(),
-                        v -> withActive(ed -> ed.setConsoleShown(v)))
+                .item(() -> active() != null && active().isConsoleShown() ? "Hide Run C&onsole" : "Show Run C&onsole",
+                        SWT.MOD1 | SWT.SHIFT | 'Y', () -> withActive(ed -> ed.setConsoleShown(!ed.isConsoleShown())), this::hasActive)
                 .item("C&lear Run Results", 0, () -> withActive(ed -> ed.run.reset()), () -> active() != null && !active().run.isActive());
 
         MenuBarBuilder.MenuBuilder diagram = mb.menu("&Diagram");

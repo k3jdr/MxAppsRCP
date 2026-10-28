@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.eclipse.jface.action.LegacyActionTools;
 import org.eclipse.swt.SWT;
@@ -92,6 +93,22 @@ public final class MenuBarBuilder {
                     if (!mi.isDisposed()) mi.setEnabled(enabled.getAsBoolean());
                 });
             }
+            return this;
+        }
+
+        /**
+         * An item whose label is asked again each time the menu opens, as the Mac's menus change theirs: Run / Continue,
+         * Show / Hide Console. Enabled while {@code enabled} answers true (always when null).
+         */
+        public MenuBuilder item(Supplier<String> label, int accelerator, Runnable action, BooleanSupplier enabled) {
+            MenuItem mi = new MenuItem(menu, SWT.PUSH);
+            setText(mi, label.get(), accelerator);
+            mi.addListener(SWT.Selection, e -> safely(mi, action));
+            refreshers.add(() -> {
+                if (mi.isDisposed()) return;
+                setText(mi, label.get(), accelerator);
+                if (enabled != null) mi.setEnabled(enabled.getAsBoolean());
+            });
             return this;
         }
 

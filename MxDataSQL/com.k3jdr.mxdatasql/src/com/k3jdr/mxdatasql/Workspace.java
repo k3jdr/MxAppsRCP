@@ -1,17 +1,14 @@
 package com.k3jdr.mxdatasql;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.k3jdr.mx.core.db.PgSettings;
+import com.k3jdr.mx.core.json.AppleJson;
 
 /**
  * A workspace, MxDataSQL's document (*.mxworkspace): the connection parameters, the last opened table and the grid
@@ -180,76 +177,7 @@ public final class Workspace {
         });
         v.add("columnWidths", widths);
         root.add("view", v);
-        StringBuilder sb = new StringBuilder();
-        appleJson(root, sb, 0);
-        return sb.toString();
-    }
-
-    /** JSONEncoder's .prettyPrinted + .sortedKeys layout: two-space indent, "key" : value, slashes escaped. */
-    static void appleJson(JsonElement e, StringBuilder sb, int depth) {
-        if (e == null || e.isJsonNull()) {
-            sb.append("null");
-        } else if (e instanceof JsonObject o) {
-            if (o.size() == 0) {
-                sb.append("{\n\n").append("  ".repeat(depth)).append('}');
-                return;
-            }
-            List<String> keys = new ArrayList<>(o.keySet());
-            keys.sort(null);
-            sb.append("{\n");
-            for (int i = 0; i < keys.size(); i++) {
-                sb.append("  ".repeat(depth + 1));
-                string(keys.get(i), sb);
-                sb.append(" : ");
-                appleJson(o.get(keys.get(i)), sb, depth + 1);
-                if (i < keys.size() - 1) sb.append(',');
-                sb.append('\n');
-            }
-            sb.append("  ".repeat(depth)).append('}');
-        } else if (e instanceof JsonArray a) {
-            if (a.isEmpty()) {
-                sb.append("[\n\n").append("  ".repeat(depth)).append(']');
-                return;
-            }
-            sb.append("[\n");
-            for (int i = 0; i < a.size(); i++) {
-                sb.append("  ".repeat(depth + 1));
-                appleJson(a.get(i), sb, depth + 1);
-                if (i < a.size() - 1) sb.append(',');
-                sb.append('\n');
-            }
-            sb.append("  ".repeat(depth)).append(']');
-        } else {
-            JsonPrimitive p = e.getAsJsonPrimitive();
-            if (p.isString()) string(p.getAsString(), sb);
-            else if (p.isBoolean()) sb.append(p.getAsBoolean());
-            else {
-                double d = p.getAsDouble();
-                if (d == Math.rint(d) && Math.abs(d) < 1e15) sb.append((long) d);
-                else sb.append(p.getAsNumber().toString());
-            }
-        }
-    }
-
-    private static void string(String s, StringBuilder sb) {
-        sb.append('"');
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
-            switch (ch) {
-                case '"' -> sb.append("\\\"");
-                case '\\' -> sb.append("\\\\");
-                case '/' -> sb.append("\\/");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\t' -> sb.append("\\t");
-                case '\b' -> sb.append("\\b");
-                case '\f' -> sb.append("\\f");
-                default -> {
-                    if (ch < 0x20) sb.append(String.format("\\u%04x", (int) ch));
-                    else sb.append(ch);
-                }
-            }
-        }
-        sb.append('"');
+        // JSONEncoder's .prettyPrinted + .sortedKeys layout, slashes escaped, as the Mac app writes a workspace.
+        return AppleJson.write(root, AppleJson.Format.PRETTY_SORTED_ESCAPED);
     }
 }

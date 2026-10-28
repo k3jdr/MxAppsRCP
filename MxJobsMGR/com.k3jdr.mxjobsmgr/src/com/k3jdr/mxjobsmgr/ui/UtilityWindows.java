@@ -141,12 +141,10 @@ public final class UtilityWindows {
         hint.setBackground(Ui.SIDEBAR);
         servicesView = new ServicesView(s, "New Jobspace", sample -> main.openSample(sample.id(), null, null));
         servicesView.setLayoutData(Ui.fill());
-        // The shared ServicesView has no Add Step of its own: follow its list's selection.
-        Table table = findTable(servicesView);
+        // The Add Step bar follows the service selected in the shared view.
         ServiceCatalog.Service[] current = new ServiceCatalog.Service[1];
         Runnable sync = () -> {
-            int i = table == null ? 0 : Math.max(0, table.getSelectionIndex());
-            ServiceCatalog.Service svc = table != null && table.getItemCount() > i && table.getItem(i).getData() instanceof ServiceCatalog.Service x ? x : ServiceCatalog.ALL.get(0);
+            ServiceCatalog.Service svc = servicesView.selectedService();
             current[0] = svc;
             endpoints.removeAll();
             for (ServiceCatalog.Endpoint ep : svc.endpoints()) endpoints.add(ep.method() + " " + ep.path() + " — " + ep.summary());
@@ -155,7 +153,7 @@ public final class UtilityWindows {
             hint.setText(main.hasEditor() ? "" : "Open a jobspace first");
             bar.layout(true);
         };
-        if (table != null) table.addListener(SWT.Selection, e -> sync.run());
+        servicesView.onSelect(svc -> sync.run());
         add.addListener(SWT.Selection, e -> {
             ServiceCatalog.Service svc = current[0];
             if (svc == null) return;
@@ -169,17 +167,6 @@ public final class UtilityWindows {
         if (serviceId != null) servicesView.select(serviceId);
         sync.run();
         s.open();
-    }
-
-    private static Table findTable(Control c) {
-        if (c instanceof Table t) return t;
-        if (c instanceof Composite comp) {
-            for (Control child : comp.getChildren()) {
-                Table t = findTable(child);
-                if (t != null) return t;
-            }
-        }
-        return null;
     }
 
     // MARK: Adding API Keys
