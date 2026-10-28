@@ -8,6 +8,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-21
 Automatic-Module-Name: com.k3jdr.mxdatasql
 Bundle-ActivationPolicy: lazy
 Require-Bundle: com.k3jdr.mx.core,
+ com.k3jdr.mx.dbml,
  org.eclipse.e4.ui.workbench,
  org.eclipse.e4.ui.model.workbench,
  org.eclipse.e4.ui.workbench.swt,
