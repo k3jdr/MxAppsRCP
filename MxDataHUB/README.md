@@ -66,6 +66,52 @@ connected), `-section Portfolios` (or `"Data Refresh"`, `"Services & Workflows"`
 `-query AAPL`, `-host`, `-port`, `-dbUser`, `-database`, `-sslMode`, `-srmLoaderPort 8790`, and for checking layouts
 without a database `-layoutPreview YES` (the database screens show empty while not connected).
 
+## Scheduled data refresh (the PC that hosts the database)
+
+`schedule\srm_refresh.py` runs Data Refresh unattended from Windows Task Scheduler, on the PC with the `srm`
+database (192.168.0.223). It uses the same SRM loader service and the same rules as **Refresh All**: categories in
+dependency order, the optional Portfolio snapshots left out, stopping at the first category that fails. It refreshes
+every daily category, and the weekly and monthly ones only when they are no longer fresh. When the service isn't
+running it starts it (`Services\mxservices.py start srm-loader`, no window) and leaves it running for the app. It
+copies every line the loaders print into its own log, then ends with the service's data-quality checks (`GET /status`).
+While it runs, **Data Refresh ▸ Activity** shows it like any other refresh; **Load History** keeps it afterwards.
+
+```bat
+MxDataHUB\schedule\srm-refresh.cmd install                 :: weekdays at 18:30 (the Mac's SRM Daily Refresh time)
+MxDataHUB\schedule\srm-refresh.cmd install --time 06:15 --days daily
+MxDataHUB\schedule\srm-refresh.cmd status                  :: the task's next / last run, the last refresh, saved secrets
+MxDataHUB\schedule\srm-refresh.cmd run --dry-run           :: what it would run now, without loading anything
+MxDataHUB\schedule\srm-refresh.cmd run                     :: refresh now, in this console
+MxDataHUB\schedule\srm-refresh.cmd uninstall
+schtasks /run /tn "MxDataHUB SRM Refresh"                  :: start the scheduled task now
+```
+
+More run options (also accepted by `install`, which hands them to the task): `--all` (every category, fresh or not),
+`--categories a,b` (exactly these), `--skip a,b`, `--include-optional`, `--keep-going` (go on after a failed
+category), `--verbosity 1|2` (srm.py's `-v` / `-vv`), `--log-dir`, `--ios-repo`. Logs:
+`%LOCALAPPDATA%\MxAppsRCP\MxDataHUB\refresh\refresh-<date>-<time>.log` (the last 90) and `last-run.json`. Exit code 0
+means refreshed (some loaders may be partial); 1 means a category failed, or the service or database wasn't reachable.
+
+**Secrets.** On a Mac, srm.py finds the database password and API keys in the Keychain. On Windows it looks in the
+**Credential Manager**, under generic credentials named `service:account`; `status` lists which are saved. Each
+`cmdkey` prompts for its value:
+
+```bat
+cmdkey /generic:SRM-postgres:postgres@192.168.0.223/srm /user:postgres /pass
+cmdkey /generic:SRM-api:fmp /user:fmp /pass
+cmdkey /generic:SRM-api:openfigi /user:openfigi /pass
+cmdkey /generic:SRM-api:massive-s3-access /user:massive-s3-access /pass
+cmdkey /generic:SRM-api:massive-s3-secret /user:massive-s3-secret /pass
+```
+
+SEC EDGAR wants a User-Agent with a contact e-mail. Put `"sec_user_agent": "Name you@example.com"` in
+`MxAppsIOS\MxDataHUB\SRM\config.local.json`, which the loaders read on every load. Or set `SRM_SEC_USER_AGENT`
+and restart srm-loader from a console opened after `setx`.
+
+The task runs as you **while you are signed in** (a locked screen is fine). It wakes the PC, and a run missed while the
+PC was off starts when it is back. To run it while signed out too, open it in Task Scheduler, choose *Run whether
+user is logged on or not*, and give your Windows password there. That logon keeps the Credential Manager available.
+
 ## Differences from the Mac app
 
 * ⌘ is Ctrl, ⌥⌘/ is Ctrl+Alt+/, ⌃← / ⌃→ are Alt+Left / Alt+Right; the Keychain is Windows secure storage.

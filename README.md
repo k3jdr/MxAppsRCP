@@ -73,5 +73,9 @@ The Layer 3 services (Python, Java, C++) and the SRM loaders are used from the M
 python D:\MyCodeGIT\MxAppsIOS\Services\mxservices.py start
 ```
 
+The loaders' database password and API keys go in the Windows Credential Manager (`cmdkey /generic:SRM-api:fmp
+/user:fmp /pass`). On the PC that hosts the `srm` database, `MxDataHUB\schedule\srm-refresh.cmd install` runs Data
+Refresh every weekday evening ([MxDataHUB/README.md](MxDataHUB/README.md#scheduled-data-refresh-the-pc-that-hosts-the-database)).
+
 See [DEVELOPING.md](DEVELOPING.md) for the project layout, the shared core bundle, conventions, importing into
 Eclipse IDE and the smoke test.
